@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { readAdminConfig, writeAdminConfig, toPublicConfig } from '@/lib/admin/config';
 import type { AdminConfig, SttProviderType, TtsProviderType } from '@/types/admin';
+import { isValidElevenLabsViVoiceId } from '@/lib/voice/elevenlabsViVoices';
 
 const VALID_STT: SttProviderType[] = ['web-speech', 'openai-realtime', 'elevenlabs'];
-const VALID_TTS: TtsProviderType[] = ['openai-tts', 'elevenlabs'];
+const VALID_TTS: TtsProviderType[] = ['web-speech', 'openai-tts', 'elevenlabs'];
 
 function verifyPin(pin: string | undefined): boolean {
   const required = process.env.ADMIN_SETTINGS_PIN;
@@ -20,17 +21,21 @@ export async function GET() {
 interface AdminConfigUpdateBody {
   sttProvider?: SttProviderType;
   ttsProvider?: TtsProviderType;
+  elevenlabsVoiceId?: string;
   pin?: string;
 }
 
-/** POST — admin update STT and/or TTS (requires ADMIN_SETTINGS_PIN if set) */
+/** POST — admin update STT, TTS and/or ElevenLabs voice */
 export async function POST(req: NextRequest) {
   try {
     const body = (await req.json()) as AdminConfigUpdateBody;
-    const { sttProvider, ttsProvider, pin } = body;
+    const { sttProvider, ttsProvider, elevenlabsVoiceId, pin } = body;
 
-    if (!sttProvider && !ttsProvider) {
-      return NextResponse.json({ error: 'Cần ít nhất sttProvider hoặc ttsProvider' }, { status: 400 });
+    if (!sttProvider && !ttsProvider && !elevenlabsVoiceId) {
+      return NextResponse.json(
+        { error: 'Cần ít nhất sttProvider, ttsProvider hoặc elevenlabsVoiceId' },
+        { status: 400 }
+      );
     }
 
     if (sttProvider && !VALID_STT.includes(sttProvider)) {
@@ -39,6 +44,10 @@ export async function POST(req: NextRequest) {
 
     if (ttsProvider && !VALID_TTS.includes(ttsProvider)) {
       return NextResponse.json({ error: 'ttsProvider không hợp lệ' }, { status: 400 });
+    }
+
+    if (elevenlabsVoiceId && !isValidElevenLabsViVoiceId(elevenlabsVoiceId)) {
+      return NextResponse.json({ error: 'elevenlabsVoiceId không hợp lệ' }, { status: 400 });
     }
 
     if (!verifyPin(pin)) {
@@ -50,6 +59,7 @@ export async function POST(req: NextRequest) {
       ...current,
       ...(sttProvider ? { sttProvider } : {}),
       ...(ttsProvider ? { ttsProvider } : {}),
+      ...(elevenlabsVoiceId ? { elevenlabsVoiceId } : {}),
     };
 
     if (next.sttProvider === 'openai-realtime' && !process.env.OPENAI_API_KEY) {

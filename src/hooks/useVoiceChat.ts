@@ -19,7 +19,7 @@ export function useVoiceChat(lipSyncRef: React.MutableRefObject<LipSyncManager |
 
   const { config: adminConfig } = useAdminConfig();
   const sttProvider: SttProviderType = adminConfig?.sttProvider ?? 'web-speech';
-  const ttsProvider: TtsProviderType = adminConfig?.ttsProvider ?? 'openai-tts';
+  const ttsProvider: TtsProviderType = adminConfig?.ttsProvider ?? 'web-speech';
 
   const serviceRef = useRef<VoiceService | null>(null);
   const isListeningRef = useRef(false);
@@ -35,6 +35,7 @@ export function useVoiceChat(lipSyncRef: React.MutableRefObject<LipSyncManager |
       const service = serviceRef.current;
       if (!service || !text.trim()) return;
 
+      setSubtitle('');
       setAIState('THINKING');
       const systemPrompt = buildVoiceChatPrompt(settings.petName);
 
@@ -144,6 +145,7 @@ export function useVoiceChat(lipSyncRef: React.MutableRefObject<LipSyncManager |
         return;
       }
 
+      setSubtitle('');
       setAIState('THINKING');
       try {
         const response = systemPrompt

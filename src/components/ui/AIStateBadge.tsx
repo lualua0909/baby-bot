@@ -16,7 +16,7 @@ function useTypewriter(text: string, enabled: boolean, speed = 32) {
 
   useEffect(() => {
     if (!enabled) {
-      setShown(text);
+      setShown('');
       return;
     }
     setShown('');
@@ -30,21 +30,6 @@ function useTypewriter(text: string, enabled: boolean, speed = 32) {
   }, [text, enabled, speed]);
 
   return shown;
-}
-
-function ThinkingDots() {
-  return (
-    <CartoonRow className="pointer-events-none gap-1.5">
-      {[0, 1, 2].map((i) => (
-        <motion.span
-          key={i}
-          className="block h-2.5 w-2.5 rounded-full bg-white"
-          animate={{ opacity: [0.3, 1, 0.3], y: [0, -3, 0] }}
-          transition={{ repeat: Infinity, duration: 0.9, delay: i * 0.18 }}
-        />
-      ))}
-    </CartoonRow>
-  );
 }
 
 export default function AIStateBadge() {
@@ -61,8 +46,8 @@ export default function AIStateBadge() {
   const typed = useTypewriter(fullText, hasSpeech);
   const isTyping = hasSpeech && typed.length < fullText.length;
 
-  // Bubble chat chỉ hiển thị khi character đang nói hoặc đang suy nghĩ.
-  const visible = hasSpeech || isThinking;
+  // Bubble chat chỉ hiển thị khi character đang nói; khi đợi response thì ẩn (nội dung đã clear).
+  const visible = hasSpeech;
 
   if (!mounted) return null;
 
@@ -72,43 +57,32 @@ export default function AIStateBadge() {
       style={{ zIndex: CHAT_BUBBLE_Z }}
       aria-live="polite"
     >
-      <div className="pointer-events-none absolute top-[max(5.5rem,14%)] left-1/2 w-[min(88vw,26rem)] -translate-x-1/2">
+      <div className="pointer-events-none absolute top-6 left-1/2 w-[min(88vw,26rem)] -translate-x-1/2 md:top-8">
         <motion.div className="animate-bubble-bob pointer-events-auto flex justify-center">
           <AnimatePresence mode="wait">
             {visible && (
               <motion.div
-                key={isThinking ? 'thinking' : 'speech'}
+                key="speech"
                 initial={{ opacity: 0, y: -12, scale: 0.6 }}
                 animate={{ opacity: 1, y: 0, scale: 1 }}
                 exit={{ opacity: 0, scale: 0.6 }}
                 transition={{ type: 'spring', stiffness: 320, damping: 18 }}
-                className={isThinking ? 'inline-block' : undefined}
               >
-                {isThinking ? (
-                  <CartoonChatBubble
-                    variant="ai"
-                    tail="down"
-                    className="inline-flex w-auto max-w-none rounded-full px-4 py-3"
-                  >
-                    <ThinkingDots />
-                  </CartoonChatBubble>
-                ) : (
-                  <CartoonChatBubble variant="ai" tail="down" className="max-w-full w-full">
-                    <CartoonRow className="pointer-events-none">
-                      <motion.span
-                        className="text-2xl leading-none shrink-0"
-                        animate={{ scale: [1, 1.15, 1] }}
-                        transition={{ repeat: Infinity, duration: 0.7 }}
-                      >
-                        💬
-                      </motion.span>
-                      <span className={cn(cartoonTypography.body, 'text-left text-white')}>
-                        {typed}
-                        {isTyping && <span className="typing-caret" aria-hidden />}
-                      </span>
-                    </CartoonRow>
-                  </CartoonChatBubble>
-                )}
+                <CartoonChatBubble variant="ai" tail="down" className="max-w-full w-full">
+                  <CartoonRow className="pointer-events-none">
+                    <motion.span
+                      className="text-2xl leading-none shrink-0"
+                      animate={{ scale: [1, 1.15, 1] }}
+                      transition={{ repeat: Infinity, duration: 0.7 }}
+                    >
+                      💬
+                    </motion.span>
+                    <span className={cn(cartoonTypography.body, 'text-left text-white')}>
+                      {typed}
+                      {isTyping && <span className="typing-caret" aria-hidden />}
+                    </span>
+                  </CartoonRow>
+                </CartoonChatBubble>
               </motion.div>
             )}
           </AnimatePresence>

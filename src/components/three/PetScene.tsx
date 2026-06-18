@@ -89,10 +89,15 @@ function BeachFloor() {
 useGLTF.preload(DEFAULT_FLOOR.url);
 
 /**
- * Bounding box dùng để frame camera. Chỉ gộp các mesh KHÔNG phải skinned
- * (thân, đầu, tay/chân cứng) — chiếm gần như toàn thân — để có khung ổn định.
- * Skinned mesh (vd bàn tay) bị bỏ qua vì geometry boundingBox của nó nằm trong
- * không gian bind, có thể phình rất to làm camera zoom xa → nhân vật tí hon.
+ * Bounding box dùng để frame camera. Gộp boundingBox của geometry từng mesh ở
+ * BIND POSE (≈ tư thế Idle) rồi nhân matrixWorld.
+ *
+ * QUAN TRỌNG — KHÔNG dùng Box3.setFromObject(target) cho nhân vật toàn skinned
+ * mesh (vd character-2/3): three tính boundingBox của SkinnedMesh theo tư thế
+ * ĐÃ POSE qua xương, với model clone bằng SkeletonUtils nó phình bất thường tới
+ * vài trăm→nghìn unit → camera lùi cực xa → cả nhân vật lẫn cảnh bé tí.
+ * boundingBox của geometry (bind pose) thì ổn định, nên dùng nó cho mọi mesh,
+ * kể cả skinned.
  */
 function boundingBoxForFraming(target: THREE.Object3D): THREE.Box3 {
   const box = new THREE.Box3();
@@ -100,14 +105,12 @@ function boundingBoxForFraming(target: THREE.Object3D): THREE.Box3 {
   target.updateWorldMatrix(true, true);
   target.traverse((child) => {
     const mesh = child as THREE.Mesh;
-    if (!mesh.isMesh || (mesh as THREE.SkinnedMesh).isSkinnedMesh) return;
+    if (!mesh.isMesh) return;
     if (!mesh.geometry.boundingBox) mesh.geometry.computeBoundingBox();
     if (!mesh.geometry.boundingBox) return;
     tmp.copy(mesh.geometry.boundingBox).applyMatrix4(mesh.matrixWorld);
     box.union(tmp);
   });
-  // Fallback nếu model toàn skinned mesh.
-  if (box.isEmpty()) box.setFromObject(target);
   return box;
 }
 
@@ -154,8 +157,9 @@ function CameraFit({ target }: { target: THREE.Group | null }) {
     const distH = fitWidth / 2 / Math.tan(hFov / 2);
     const dist = Math.max(distV, distH) * 1.04;
 
-    // Look from slightly above & in front, like the reference.
-    const dir = new THREE.Vector3(0, 0.1, 1).normalize();
+    // Nhân vật quay mặt về +X (rotationY = 90°), nên đặt camera phía +X để nhìn
+    // thẳng mặt; chếch nhẹ lên trên (0.1) cho giống góc tham chiếu.
+    const dir = new THREE.Vector3(1, 0.1, 0).normalize();
     camera.position.copy(center).add(dir.multiplyScalar(dist));
     camera.near = Math.max(0.1, dist - radius * 3);
     camera.far = dist + radius * 4;

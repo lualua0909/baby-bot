@@ -15,6 +15,7 @@ import { CartoonCard, CartoonStack } from '@/components/cartoon';
 import { useAppStore } from '@/store/appStore';
 import { useAdminConfig } from '@/hooks/useAdminConfig';
 import { STT_PROVIDER_OPTIONS, TTS_PROVIDER_OPTIONS } from '@/types/admin';
+import { getElevenLabsViVoice } from '@/lib/voice/elevenlabsViVoices';
 import { cartoonTypography } from '@/styles/cartoon-tokens';
 import { cn } from '@/lib/utils';
 
@@ -30,7 +31,11 @@ export default function SettingsModal() {
   const sttLabel =
     STT_PROVIDER_OPTIONS.find((o) => o.id === adminConfig?.sttProvider)?.name ?? 'Đang tải...';
   const ttsLabel =
-    TTS_PROVIDER_OPTIONS.find((o) => o.id === adminConfig?.ttsProvider)?.name ?? 'Đang tải...';
+    adminConfig?.ttsProvider === 'elevenlabs'
+      ? `${TTS_PROVIDER_OPTIONS.find((o) => o.id === adminConfig?.ttsProvider)?.name ?? 'ElevenLabs'} — ${
+          getElevenLabsViVoice(adminConfig.elevenlabsVoiceId)?.name ?? 'Đang tải...'
+        }`
+      : TTS_PROVIDER_OPTIONS.find((o) => o.id === adminConfig?.ttsProvider)?.name ?? 'Đang tải...';
 
   return (
     <KidModal open={isOpen} onClose={() => setSettingsOpen(false)} title="🎨 Cài đặt">

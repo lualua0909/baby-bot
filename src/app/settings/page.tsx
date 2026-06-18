@@ -8,8 +8,15 @@ import {
   type SttProviderType,
   type TtsProviderType,
 } from '@/types/admin';
+import {
+  ELEVENLABS_VI_FEMALE_VOICES,
+  ELEVENLABS_VI_MALE_VOICES,
+  ELEVENLABS_DEFAULT_VI_VOICE_ID,
+  getElevenLabsViVoice,
+} from '@/lib/voice/elevenlabsViVoices';
 import { useAdminConfig } from '@/hooks/useAdminConfig';
 import ProviderCard from '@/components/settings/ProviderCard';
+import ElevenLabsVoiceCard from '@/components/settings/ElevenLabsVoiceCard';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Label } from '@/components/ui/Label';
@@ -30,33 +37,40 @@ export default function SettingsPage() {
   const { config, loading, error, saveConfig } = useAdminConfig();
   const [selectedStt, setSelectedStt] = useState<SttProviderType | null>(null);
   const [selectedTts, setSelectedTts] = useState<TtsProviderType | null>(null);
+  const [selectedElevenLabsVoice, setSelectedElevenLabsVoice] = useState<string | null>(null);
   const [pin, setPin] = useState('');
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
   const activeStt = selectedStt ?? config?.sttProvider ?? 'web-speech';
-  const activeTts = selectedTts ?? config?.ttsProvider ?? 'openai-tts';
+  const activeTts = selectedTts ?? config?.ttsProvider ?? 'web-speech';
+  const activeElevenLabsVoice =
+    selectedElevenLabsVoice ?? config?.elevenlabsVoiceId ?? ELEVENLABS_DEFAULT_VI_VOICE_ID;
+  const activeElevenLabsVoiceLabel = getElevenLabsViVoice(activeElevenLabsVoice)?.name;
 
   const hasChanges =
     config !== null &&
-    (activeStt !== config.sttProvider || activeTts !== config.ttsProvider);
+    (activeStt !== config.sttProvider ||
+      activeTts !== config.ttsProvider ||
+      (activeTts === 'elevenlabs' &&
+        activeElevenLabsVoice !== (config.elevenlabsVoiceId ?? ELEVENLABS_DEFAULT_VI_VOICE_ID)));
 
   const handleSave = async () => {
     if (!config) return;
     setSaving(true);
     setMessage(null);
     try {
-      const update: { sttProvider?: SttProviderType; ttsProvider?: TtsProviderType; pin?: string } =
-        { pin: pin || undefined };
-
-      if (activeStt !== config.sttProvider) update.sttProvider = activeStt;
-      if (activeTts !== config.ttsProvider) update.ttsProvider = activeTts;
-
-      await saveConfig(update);
+      await saveConfig({
+        sttProvider: activeStt,
+        ttsProvider: activeTts,
+        ...(activeTts === 'elevenlabs' ? { elevenlabsVoiceId: activeElevenLabsVoice } : {}),
+        pin: pin || undefined,
+      });
       setMessage({ type: 'success', text: 'Đã lưu cấu hình voice. App sẽ dùng provider mới ngay lập tức.' });
       setPin('');
       setSelectedStt(null);
       setSelectedTts(null);
+      setSelectedElevenLabsVoice(null);
     } catch (err) {
       setMessage({
         type: 'error',
@@ -102,24 +116,31 @@ export default function SettingsPage() {
           <CartoonSection>
             <CartoonCard variant="yellow">
               <p className={cn(cartoonTypography.caption, 'text-white/80 uppercase mb-4')}>
-                Đang hoạt động
+                {hasChanges ? 'Đã chọn (chưa lưu)' : 'Đang hoạt động'}
               </p>
               <div className="grid sm:grid-cols-2 gap-6">
                 <div>
                   <p className={cn(cartoonTypography.caption, 'text-white/70 uppercase')}>STT</p>
                   <p className={cn(cartoonTypography.subheading, 'text-white')}>
-                    {STT_PROVIDER_OPTIONS.find((o) => o.id === config.sttProvider)?.name}
+                    {STT_PROVIDER_OPTIONS.find((o) => o.id === activeStt)?.name}
                   </p>
                 </div>
                 <div>
                   <p className={cn(cartoonTypography.caption, 'text-white/70 uppercase')}>TTS</p>
                   <p className={cn(cartoonTypography.subheading, 'text-white')}>
-                    {TTS_PROVIDER_OPTIONS.find((o) => o.id === config.ttsProvider)?.name}
+                    {TTS_PROVIDER_OPTIONS.find((o) => o.id === activeTts)?.name}
                   </p>
+                  {activeTts === 'elevenlabs' && activeElevenLabsVoiceLabel && (
+                    <p className={cn(cartoonTypography.caption, 'text-white/80 mt-1')}>
+                      Giọng: {activeElevenLabsVoiceLabel}
+                    </p>
+                  )}
                 </div>
               </div>
               <p className={cn(cartoonTypography.caption, 'text-white/70 mt-4')}>
-                Cập nhật lần cuối: {new Date(config.updatedAt).toLocaleString('vi-VN')}
+                {hasChanges
+                  ? 'Nhấn "Lưu cấu hình Voice" để áp dụng cho toàn app'
+                  : `Cập nhật lần cuối: ${new Date(config.updatedAt).toLocaleString('vi-VN')}`}
               </p>
             </CartoonCard>
 
@@ -153,9 +174,54 @@ export default function SettingsPage() {
                     option={option}
                     isSelected={activeTts === option.id}
                     onSelect={() => setSelectedTts(option.id)}
+                    freeBadge={option.id === 'web-speech'}
                   />
                 ))}
               </CartoonStack>
+
+              {activeTts === 'elevenlabs' && (
+                <>
+                  <h2 className={cn(cartoonTypography.subheading, cartoonInk, 'mt-8')}>
+                    🎭 Giọng nhân vật ElevenLabs
+                  </h2>
+                  <p className={cn(cartoonTypography.body, cartoonInk, 'opacity-70')}>
+                    Chọn giọng tiếng Việt cho bạn thú — 5 giọng nữ và 5 giọng nam
+                  </p>
+
+                  <h3 className={cn(cartoonTypography.body, cartoonInk, 'font-semibold mt-4')}>
+                    👧 Giọng nữ
+                  </h3>
+                  <CartoonStack align="stretch">
+                    {ELEVENLABS_VI_FEMALE_VOICES.map((voice) => (
+                      <ElevenLabsVoiceCard
+                        key={voice.id}
+                        voice={voice}
+                        isSelected={activeElevenLabsVoice === voice.id}
+                        onSelect={() => setSelectedElevenLabsVoice(voice.id)}
+                      />
+                    ))}
+                  </CartoonStack>
+
+                  <h3 className={cn(cartoonTypography.body, cartoonInk, 'font-semibold mt-6')}>
+                    👦 Giọng nam
+                  </h3>
+                  <CartoonStack align="stretch">
+                    {ELEVENLABS_VI_MALE_VOICES.map((voice) => (
+                      <ElevenLabsVoiceCard
+                        key={voice.id}
+                        voice={voice}
+                        isSelected={activeElevenLabsVoice === voice.id}
+                        onSelect={() => setSelectedElevenLabsVoice(voice.id)}
+                      />
+                    ))}
+                  </CartoonStack>
+
+                  <p className={cn(cartoonTypography.caption, cartoonInk, 'opacity-60 mt-4')}>
+                    Giọng thư viện ElevenLabs cần gói trả phí. Nếu không dùng được, app tự fallback
+                    sang giọng miễn phí.
+                  </p>
+                </>
+              )}
             </CartoonSection>
 
             <CartoonCard variant="pink">
@@ -187,7 +253,7 @@ export default function SettingsPage() {
             </CartoonCard>
 
             <List className={cn(cartoonTypography.caption, cartoonInk, 'opacity-70')}>
-              <ListItem>• Web Speech STT: không cần biến môi trường</ListItem>
+              <ListItem>• Web Speech STT/TTS: không cần biến môi trường</ListItem>
               <ListItem>• LLM: LLM_API_URL, LLM_API_KEY, LLM_MODEL</ListItem>
               <ListItem>• OpenAI STT/TTS: cần OPENAI_API_KEY (nếu dùng)</ListItem>
               <ListItem>• ElevenLabs STT/TTS: cần ELEVENLABS_API_KEY</ListItem>

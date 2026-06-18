@@ -7,11 +7,14 @@ import { OpenAITTSProvider } from './providers/OpenAITTSProvider';
 import { OpenAIRealtimeProvider } from './providers/OpenAIRealtimeProvider';
 import { DeepgramProvider } from './providers/DeepgramProvider';
 import { ElevenLabsProvider } from './providers/ElevenLabsProvider';
+import { WebSpeechTTSProvider } from './providers/WebSpeechTTSProvider';
 import { CartesiaProvider } from './providers/CartesiaProvider';
 import { aiStateMachine } from '@/lib/ai/stateMachine';
 
 export function createTTSProvider(type: VoiceProviderType): VoiceProvider {
   switch (type) {
+    case 'web-speech':
+      return new WebSpeechTTSProvider();
     case 'openai-tts':
       return new OpenAITTSProvider();
     case 'openai-realtime':
@@ -111,12 +114,20 @@ export class VoiceService {
     this.callbacks.onSpeakingStart?.(text);
 
     try {
+      if (this.ttsProvider.name === 'web-speech') {
+        const browserTts = this.ttsProvider as WebSpeechTTSProvider;
+        await browserTts.speak(text);
+        this.finishSpeaking('tts_end');
+        return;
+      }
+
       const result: TTSResult = await this.ttsProvider.synthesize(text);
       await this.playAudio(result.audioUrl);
     } catch (apiError) {
       console.warn('API TTS failed, falling back to browser speech:', apiError);
       try {
-        await this.speakWithBrowserSynthesis(text);
+        await new WebSpeechTTSProvider().speak(text);
+        this.finishSpeaking('tts_end');
       } catch (fallbackError) {
         this.finishSpeaking('error');
         throw fallbackError;
@@ -167,50 +178,6 @@ export class VoiceService {
       };
 
       audio.play().catch(reject);
-    });
-  }
-
-  private waitForSpeechVoices(): Promise<SpeechSynthesisVoice[]> {
-    return new Promise((resolve) => {
-      const voices = window.speechSynthesis.getVoices();
-      if (voices.length > 0) {
-        resolve(voices);
-        return;
-      }
-      window.speechSynthesis.onvoiceschanged = () => {
-        resolve(window.speechSynthesis.getVoices());
-      };
-    });
-  }
-
-  private async speakWithBrowserSynthesis(text: string): Promise<void> {
-    if (typeof window === 'undefined' || !window.speechSynthesis) {
-      throw new Error('Trình duyệt không hỗ trợ đọc văn bản');
-    }
-
-    window.speechSynthesis.cancel();
-    const voices = await this.waitForSpeechVoices();
-    const voice =
-      voices.find((v) => v.lang.toLowerCase().startsWith('vi')) ??
-      voices.find((v) => v.lang.toLowerCase().includes('vi')) ??
-      null;
-
-    return new Promise((resolve, reject) => {
-      const utterance = new SpeechSynthesisUtterance(text);
-      utterance.lang = 'vi-VN';
-      utterance.rate = 0.95;
-      utterance.pitch = 1.05;
-      if (voice) utterance.voice = voice;
-
-      utterance.onend = () => {
-        this.finishSpeaking('tts_end');
-        resolve();
-      };
-      utterance.onerror = () => {
-        reject(new Error('Không thể phát giọng nói trên trình duyệt'));
-      };
-
-      window.speechSynthesis.speak(utterance);
     });
   }
 

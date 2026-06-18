@@ -11,6 +11,13 @@
 /** Mốc mặt đất chung cho cả sàn lẫn nhân vật (world Y). */
 export const GROUND_Y = -1;
 
+/**
+ * Độ lùi của nhân vật theo trục Z (world): camera nhìn từ +Z vào -Z, nên giá
+ * trị ÂM = lùi ra xa người xem (vào trong màn hình) → kéo nhân vật từ mép nước
+ * lùi lên bờ cát. Tăng |giá trị| để lùi xa hơn; đổi dấu nếu lỡ lùi nhầm hướng.
+ */
+export const CHARACTER_BACK_OFFSET = -1.5;
+
 export interface FloorConfig {
   /** URL tĩnh tới file .glb của sàn. */
   url: string;
@@ -31,8 +38,21 @@ export const FLOOR_CONFIGS: Record<string, FloorConfig> = {
 
 export const DEFAULT_FLOOR: FloorConfig = FLOOR_CONFIGS['Beach.glb'];
 
+/**
+ * Chiều cao hiển thị mục tiêu (world units) sau khi scale — mọi nhân vật canh
+ * về mức này để khi đổi character không bị to/nhỏ lệch nhau. Suy từ char-1 gốc
+ * (cao 4.791 × scale 1.2 ≈ 5.75).
+ */
+export const TARGET_CHARACTER_HEIGHT = 5.75;
+
 export interface CharacterConfig {
-  /** Hệ số phóng to model. */
+  /**
+   * Chiều cao bounding box GỐC của model (world units, đo từ file .glb chưa
+   * scale). Lưu lại để suy ra scale = TARGET_CHARACTER_HEIGHT / boundingHeight
+   * và để dễ canh lại khi đổi asset.
+   */
+  boundingHeight: number;
+  /** Hệ số phóng to model (canh boundingHeight về TARGET_CHARACTER_HEIGHT). */
   scale: number;
   /** Vị trí gốc của model; Y nên = GROUND_Y để chân chạm sàn. */
   position: [number, number, number];
@@ -49,10 +69,25 @@ export interface CharacterConfig {
 /** Thông số RIÊNG của từng nhân vật. Thêm nhân vật mới = thêm 1 entry. */
 export const CHARACTER_CONFIGS: Record<string, CharacterConfig> = {
   'character-1.glb': {
-    scale: 1.2,
-    position: [0, GROUND_Y, 0],
+    boundingHeight: 4.791,
+    scale: 1.2, // ≈ 5.75 / 4.791
+    position: [-1.5, GROUND_Y, 0],
     armatureName: 'RobotArmature',
     rotationY: Math.PI / 2, // 90° về bên trái
+  },
+  'character-2.glb': {
+    boundingHeight: 3.552,
+    scale: 1.62, // ≈ 5.75 / 3.552
+    position: [-1.5, GROUND_Y, 0],
+    armatureName: null,
+    rotationY: Math.PI / 2,
+  },
+  'character-3.glb': {
+    boundingHeight: 3.176,
+    scale: 1.81, // ≈ 5.75 / 3.176
+    position: [-1.5, GROUND_Y, 0],
+    armatureName: null,
+    rotationY: Math.PI / 2,
   },
 };
 

@@ -4,6 +4,15 @@ import type { CharacterAnimation, AnimationTransitionOptions } from '@/types/ani
 const DEFAULT_CROSSFADE = 0.35;
 
 /**
+ * Một số model (vd character-2/3) đặt tên clip dài kiểu
+ * "CharacterArmature|CharacterArmature|...|Chop_Start". App chỉ dùng đoạn cuối
+ * ("Chop_Start", "Idle"…) nên cắt lấy phần sau dấu "|" cuối cùng để khớp tên.
+ */
+function normalizeClipName(name: string): string {
+  return name.split('|').pop() ?? name;
+}
+
+/**
  * Controls skeletal animation playback with smooth crossfades.
  * Wraps THREE.AnimationMixer for production use with GLB characters.
  */
@@ -18,7 +27,7 @@ export class AnimationController {
     for (const clip of clips) {
       const action = this.mixer.clipAction(clip);
       action.clampWhenFinished = true;
-      this.actions.set(clip.name, action);
+      this.actions.set(normalizeClipName(clip.name), action);
     }
   }
 

@@ -2,7 +2,7 @@
 export type SttProviderType = 'web-speech' | 'openai-realtime' | 'elevenlabs';
 
 /** TTS providers available for admin configuration */
-export type TtsProviderType = 'openai-tts' | 'elevenlabs';
+export type TtsProviderType = 'web-speech' | 'openai-tts' | 'elevenlabs';
 
 /** Cheapest OpenAI Realtime model for STT */
 export const REALTIME_MODEL_CHEAP = 'gpt-4o-mini-realtime-preview' as const;
@@ -16,26 +16,50 @@ export const OPENAI_TTS_MODEL = 'tts-1' as const;
 /** OpenAI TTS voice — friendly for kids */
 export const OPENAI_TTS_VOICE = 'nova' as const;
 
-/** ElevenLabs low-latency multilingual model (good for Vietnamese) */
+/** Slower speech rate for young children (1.0 = normal) */
+export const KID_TTS_SPEED = 0.72 as const;
+
+/**
+ * ElevenLabs low-latency model with native Vietnamese support.
+ * Do NOT use eleven_multilingual_v2 — it does not support Vietnamese (vi).
+ */
 export const ELEVENLABS_TTS_MODEL = 'eleven_flash_v2_5' as const;
+
+/** ISO 639-1 code — required for correct Vietnamese pronunciation on Flash v2.5 */
+export const ELEVENLABS_LANGUAGE_CODE = 'vi' as const;
 
 /** ElevenLabs realtime STT model (Scribe v2) */
 export const ELEVENLABS_STT_MODEL = 'scribe_v2_realtime' as const;
 
-/** Default ElevenLabs voice ID (Anna Thu — Vietnamese) */
-export const ELEVENLABS_DEFAULT_VOICE_ID = 'P37gHF6iLTEvs2pLYhyv' as const;
+/** Default voice — Bella (premade, works on free API tier + language_code vi) */
+export const ELEVENLABS_DEFAULT_VOICE_ID = 'EXAVITQu4vr4xnSDxMaL' as const;
+
+/** @deprecated use ELEVENLABS_DEFAULT_VI_VOICE_ID from elevenlabsViVoices */
+export const ELEVENLABS_PREMIUM_VI_VOICE_ID = 'P37gHF6iLTEvs2pLYhyv' as const;
+
+/** Premade voices confirmed to work on ElevenLabs free API tier (female first for kid app) */
+export const ELEVENLABS_FREE_TIER_VOICE_IDS = [
+  ELEVENLABS_DEFAULT_VOICE_ID, // Bella — female
+  'pNInz6obpgDQGcFmaJgB', // Adam
+  'JBFqnCBsd6RMkjVDRZzb', // George
+  'ErXwobaYiN019PkySvjV', // Antoni
+  'VR6AewLTigWG4xSOukaG', // Arnold
+] as const;
 
 /** Voice tuning for a friendly, kid-facing Vietnamese voice */
 export const ELEVENLABS_VOICE_SETTINGS = {
-  stability: 0.65,
-  similarityBoost: 0.85,
-  style: 0.15,
+  stability: 0.6,
+  similarityBoost: 0.75,
+  style: 0.1,
+  speed: KID_TTS_SPEED,
   useSpeakerBoost: true,
 } as const;
 
 export interface AdminConfig {
   sttProvider: SttProviderType;
   ttsProvider: TtsProviderType;
+  /** ElevenLabs voice ID when ttsProvider is elevenlabs */
+  elevenlabsVoiceId: string;
   realtimeModel: typeof REALTIME_MODEL_CHEAP;
   transcriptionModel: typeof TRANSCRIPTION_MODEL_CHEAP;
   updatedAt: string;
@@ -83,6 +107,15 @@ export const STT_PROVIDER_OPTIONS: SttProviderOption[] = [
 
 export const TTS_PROVIDER_OPTIONS: TtsProviderOption[] = [
   {
+    id: 'web-speech',
+    name: 'Trình duyệt (Web Speech)',
+    description:
+      'Đọc văn bản bằng giọng có sẵn trên trình duyệt (Chrome/Edge/Safari). Miễn phí, không cần API key.',
+    cost: 'Miễn phí',
+    pros: ['Không tốn phí API', 'Không cần cấu hình server', 'Hoạt động offline một phần'],
+    cons: ['Giọng robot hơn', 'Tiếng Việt phụ thuộc trình duyệt', 'Không lip-sync'],
+  },
+  {
     id: 'openai-tts',
     name: 'OpenAI TTS',
     description: `Giọng nói qua OpenAI TTS API. Model: ${OPENAI_TTS_MODEL}, voice: ${OPENAI_TTS_VOICE}. Chi phí thấp, tiếng Việt ổn.`,
@@ -93,7 +126,7 @@ export const TTS_PROVIDER_OPTIONS: TtsProviderOption[] = [
   {
     id: 'elevenlabs',
     name: 'ElevenLabs',
-    description: `Giọng nói tự nhiên qua ElevenLabs. Model: ${ELEVENLABS_TTS_MODEL} — hỗ trợ đa ngôn ngữ kể cả tiếng Việt.`,
+    description: `Giọng nói tự nhiên qua ElevenLabs. Model: ${ELEVENLABS_TTS_MODEL}, ngôn ngữ: ${ELEVENLABS_LANGUAGE_CODE} — ép phát âm tiếng Việt (Bella, free tier).`,
     cost: 'Trung bình — trả phí theo ký tự',
     pros: ['Giọng tự nhiên', 'Phù hợp kể chuyện/hát', 'Đa ngôn ngữ', 'Cảm xúc tốt'],
     cons: ['Cần ELEVENLABS_API_KEY', 'Đắt hơn OpenAI TTS'],
