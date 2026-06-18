@@ -1,52 +1,65 @@
 'use client';
 
 import type { AppMode } from '@/types/ai';
-import KidButton from '@/components/ui/KidButton';
+import { CartoonButton } from '@/components/cartoon';
 import { useAppStore } from '@/store/appStore';
+import { cartoonTypography, cartoonInk, cartoonNavGlassBar } from '@/styles/cartoon-tokens';
+import { cn } from '@/lib/utils';
 
 interface MenuItem {
   mode: AppMode;
   emoji: string;
   label: string;
-  color: string;
 }
 
-/** Lime-green buttons, like the reference. Active mode turns red & lifts. */
-const LIME = '#A7D02C';
-const RED = '#E8453C';
-
 const MENU_ITEMS: MenuItem[] = [
-  { mode: 'voice', emoji: '🎤', label: 'Trò chuyện', color: LIME },
-  { mode: 'story', emoji: '📖', label: 'Kể chuyện', color: LIME },
-  { mode: 'english', emoji: '🇬🇧', label: 'Tiếng Anh', color: LIME },
-  { mode: 'singing', emoji: '🎵', label: 'Hát', color: LIME },
-  { mode: 'game', emoji: '🎮', label: 'Trò chơi', color: LIME },
+  { mode: 'voice', emoji: '🎤', label: 'Trò chuyện' },
+  { mode: 'story', emoji: '📖', label: 'Kể chuyện' },
+  { mode: 'english', emoji: '🇬🇧', label: 'Tiếng Anh' },
+  { mode: 'singing', emoji: '🎵', label: 'Hát' },
+  { mode: 'game', emoji: '🎮', label: 'Trò chơi' },
 ];
 
-export default function BottomMenu() {
+export default function BottomMenu({ isListening = false }: { isListening?: boolean }) {
   const appMode = useAppStore((s) => s.appMode);
   const setAppMode = useAppStore((s) => s.setAppMode);
 
   return (
-    <nav className="flex items-end justify-center gap-1.5 sm:gap-4 md:gap-6 px-1 pb-3 pt-2 md:pb-5">
-      {MENU_ITEMS.map((item) => {
-        const active = appMode === item.mode;
-        return (
-          <div key={item.mode} className="flex flex-col items-center gap-1">
-            <KidButton
-              active={active}
-              color={active ? RED : item.color}
-              sizeClass="w-[17vw] h-[17vw] max-w-[5.5rem] max-h-[5.5rem] text-3xl sm:text-4xl"
-              onClick={() => setAppMode(active ? 'home' : item.mode)}
-            >
-              {item.emoji}
-            </KidButton>
-            <span className="cartoon-text-sm text-[11px] sm:text-sm text-center leading-tight max-w-[5.5rem]">
-              {item.label}
-            </span>
-          </div>
-        );
-      })}
+    <nav className="group pointer-events-auto flex justify-center px-4 pb-5 pt-3">
+      <div
+        className={cn(
+          'flex items-end justify-center gap-2 rounded-[36px] px-3 py-3 sm:gap-4 sm:px-5',
+          cartoonNavGlassBar
+        )}
+      >
+        {MENU_ITEMS.map((item) => {
+          const active = appMode === item.mode;
+          const micActive = item.mode === 'voice' && isListening;
+          return (
+            <div key={item.mode} className="flex flex-col items-center gap-1.5">
+              <CartoonButton
+                glass
+                variant={active ? 'pink' : 'green'}
+                active={active}
+                pulsing={micActive}
+                className="w-[15vw] h-[15vw] max-w-[4.75rem] max-h-[4.75rem] !min-w-0 !min-h-0 text-3xl sm:text-4xl"
+                onClick={() => setAppMode(active ? 'home' : item.mode)}
+              >
+                {item.emoji}
+              </CartoonButton>
+              <span
+                className={cn(
+                  cartoonTypography.caption,
+                  'text-center text-sm leading-tight max-w-[4.75rem] transition-colors duration-300',
+                  active ? 'text-pink-600/75 group-hover:text-pink-600' : cn(cartoonInk, 'opacity-70 group-hover:opacity-100')
+                )}
+              >
+                {item.label}
+              </span>
+            </div>
+          );
+        })}
+      </div>
     </nav>
   );
 }

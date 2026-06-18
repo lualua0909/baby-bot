@@ -1,8 +1,9 @@
 'use client';
 
 import { STORY_THEMES, type StoryTheme } from '@/types/ai';
-import KidModal from '@/components/ui/KidModal';
-import KidCardButton from '@/components/ui/KidCardButton';
+import { CartoonCard, CartoonDialog, CartoonGrid, CartoonStack } from '@/components/cartoon';
+import { cartoonTypography } from '@/styles/cartoon-tokens';
+import { cn } from '@/lib/utils';
 
 interface StoryModeModalProps {
   open: boolean;
@@ -12,22 +13,27 @@ interface StoryModeModalProps {
 
 export default function StoryModeModal({ open, onClose, onSelect }: StoryModeModalProps) {
   return (
-    <KidModal open={open} onClose={onClose} title="📖 Chọn câu chuyện">
-      <div className="grid grid-cols-2 gap-3">
+    <CartoonDialog open={open} onClose={onClose} title="📖 Chọn câu chuyện">
+      <CartoonGrid cols={2}>
         {STORY_THEMES.map((theme) => (
-          <KidCardButton
+          <CartoonCard
             key={theme.id}
-            backgroundColor={`${theme.color}33`}
-            onClick={() => {
+            interactive
+            variant="yellow"
+            onCardClick={() => {
               onSelect(theme.id);
               onClose();
             }}
           >
-            <span className="text-4xl">{theme.emoji}</span>
-            <span className="font-extrabold text-gray-700">{theme.label}</span>
-          </KidCardButton>
+            <CartoonStack>
+              <span className="text-5xl">{theme.emoji}</span>
+              <span className={cn(cartoonTypography.body, 'text-white text-center')}>
+                {theme.label}
+              </span>
+            </CartoonStack>
+          </CartoonCard>
         ))}
-      </div>
-    </KidModal>
+      </CartoonGrid>
+    </CartoonDialog>
   );
 }

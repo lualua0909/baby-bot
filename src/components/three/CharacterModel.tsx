@@ -4,10 +4,17 @@ import { useEffect, useRef, useMemo } from 'react';
 import { useGLTF } from '@react-three/drei';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
+import { clone as cloneWithSkeleton } from 'three/examples/jsm/utils/SkeletonUtils.js';
 import { AnimationController } from '@/lib/animation/AnimationController';
 import { LipSyncManager } from '@/lib/lipSync/LipSyncManager';
 import { ONE_SHOT_ANIMATIONS } from '@/lib/animation/animationMap';
 import type { CharacterAnimation } from '@/types/animation';
+import { getCharacterConfig } from '@/config/scene3d';
+
+/** Lấy tên file .glb từ URL phục vụ character (vd /api/character/character-1.glb). */
+function fileNameFromUrl(url: string): string {
+  return decodeURIComponent(url.split('/').pop() ?? '');
+}
 
 interface CharacterModelProps {
   url: string;
@@ -36,9 +43,13 @@ export function CharacterModel({
   const prevAnimationRef = useRef<CharacterAnimation | null>(null);
 
   const { scene, animations } = useGLTF(url, true);
+  const config = useMemo(() => getCharacterConfig(fileNameFromUrl(url)), [url]);
 
   const clonedScene = useMemo(() => {
-    const clone = scene.clone(true);
+    // SkeletonUtils.clone clone đúng cả skeleton → skinned mesh (bàn tay) bám
+    // vào xương của BẢN CLONE (xương được mixer animate). scene.clone(true) để
+    // skinned mesh trỏ về xương GỐC (không bao giờ được animate) nên tay đứng im.
+    const clone = cloneWithSkeleton(scene) as THREE.Object3D;
     clone.traverse((child) => {
       if ((child as THREE.Mesh).isMesh) {
         const mesh = child as THREE.Mesh;
@@ -95,7 +106,14 @@ export function CharacterModel({
   });
 
   return (
-    <group ref={groupRef} position={[0, -1, 0]} scale={1.2}>
+    // Cả khung xương lẫn cánh tay (skinned) nằm trong CÙNG 1 group này, nên
+    // xoay group là xoay toàn bộ nhân vật đồng bộ.
+    <group
+      ref={groupRef}
+      position={config.position}
+      rotation={[0, config.rotationY, 0]}
+      scale={config.scale}
+    >
       <primitive object={clonedScene} />
     </group>
   );

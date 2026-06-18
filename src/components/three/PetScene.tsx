@@ -1,13 +1,14 @@
 'use client';
 
-import { Suspense, useState, useEffect } from 'react';
+import { Suspense, useState, useEffect, useMemo } from 'react';
 import { Canvas, useThree } from '@react-three/fiber';
-import { OrbitControls, Environment, ContactShadows } from '@react-three/drei';
+import { OrbitControls, Environment, ContactShadows, useGLTF } from '@react-three/drei';
 import * as THREE from 'three';
 import { CharacterModel } from './CharacterModel';
 import { LipSyncManager } from '@/lib/lipSync/LipSyncManager';
 import type { AnimationController } from '@/lib/animation/AnimationController';
 import type { CharacterAnimation } from '@/types/animation';
+import { DEFAULT_FLOOR, GROUND_Y } from '@/config/scene3d';
 
 interface PetSceneProps {
   characterUrl: string;
@@ -28,6 +29,89 @@ function LoadingFallback() {
 }
 
 /**
+ * Mặt sàn 3D: tự canh tâm về gốc toạ độ (để nhân vật đứng chính giữa, không
+ * lệch), phóng to lấp đầy màn hình, và đặt bề mặt ngang mốc chân (GROUND_Y).
+ * Thông số riêng của từng sàn lấy từ config (xem src/config/scene3d.ts).
+ */
+function BeachFloor() {
+  const { scene } = useGLTF(DEFAULT_FLOOR.url);
+
+  const cloned = useMemo(() => {
+    const clone = scene.clone(true);
+    clone.traverse((child) => {
+      const mesh = child as THREE.Mesh;
+      if (mesh.isMesh) mesh.receiveShadow = true;
+    });
+    return clone;
+  }, [scene]);
+
+  const { scale, position } = useMemo(() => {
+    const box = new THREE.Box3().setFromObject(cloned);
+    const size = new THREE.Vector3();
+    const center = new THREE.Vector3();
+    box.getSize(size);
+    box.getCenter(center);
+    const s = DEFAULT_FLOOR.footprint / Math.max(size.x, size.z);
+
+    // Dò cao độ MẶT CÁT: lấy y của vertex xa tâm nhất (mép bãi biển), tránh
+    // canh nhầm theo ngọn cây dừa (điểm cao nhất của model).
+    let maxR = -1;
+    let sandY = box.max.y;
+    cloned.traverse((child) => {
+      const mesh = child as THREE.Mesh;
+      const pos = mesh.isMesh ? mesh.geometry?.attributes?.position : undefined;
+      if (!pos) return;
+      for (let i = 0; i < pos.count; i++) {
+        const x = pos.getX(i);
+        const z = pos.getZ(i);
+        const r = Math.hypot(x, z);
+        if (r > maxR) {
+          maxR = r;
+          sandY = pos.getY(i);
+        }
+      }
+    });
+
+    return {
+      scale: s,
+      // Tâm về gốc trên trục X/Z; mặt cát canh về mốc chân (GROUND_Y).
+      position: [-center.x * s, GROUND_Y - sandY * s, -center.z * s] as [number, number, number],
+    };
+  }, [cloned]);
+
+  return (
+    <group rotation={[0, DEFAULT_FLOOR.rotationY, 0]}>
+      <primitive object={cloned} scale={scale} position={position} />
+    </group>
+  );
+}
+
+useGLTF.preload(DEFAULT_FLOOR.url);
+
+/**
+ * Bounding box dùng để frame camera. Chỉ gộp các mesh KHÔNG phải skinned
+ * (thân, đầu, tay/chân cứng) — chiếm gần như toàn thân — để có khung ổn định.
+ * Skinned mesh (vd bàn tay) bị bỏ qua vì geometry boundingBox của nó nằm trong
+ * không gian bind, có thể phình rất to làm camera zoom xa → nhân vật tí hon.
+ */
+function boundingBoxForFraming(target: THREE.Object3D): THREE.Box3 {
+  const box = new THREE.Box3();
+  const tmp = new THREE.Box3();
+  target.updateWorldMatrix(true, true);
+  target.traverse((child) => {
+    const mesh = child as THREE.Mesh;
+    if (!mesh.isMesh || (mesh as THREE.SkinnedMesh).isSkinnedMesh) return;
+    if (!mesh.geometry.boundingBox) mesh.geometry.computeBoundingBox();
+    if (!mesh.geometry.boundingBox) return;
+    tmp.copy(mesh.geometry.boundingBox).applyMatrix4(mesh.matrixWorld);
+    box.union(tmp);
+  });
+  // Fallback nếu model toàn skinned mesh.
+  if (box.isEmpty()) box.setFromObject(target);
+  return box;
+}
+
+/**
  * Frames the camera to the whole character on load and re-fits on resize,
  * so the full body is always visible on any aspect ratio (desktop + mobile).
  */
@@ -42,7 +126,7 @@ function CameraFit({ target }: { target: THREE.Group | null }) {
   useEffect(() => {
     if (!target) return;
 
-    const box = new THREE.Box3().setFromObject(target);
+    const box = boundingBoxForFraming(target);
     if (box.isEmpty()) return;
 
     const size = new THREE.Vector3();
@@ -51,19 +135,24 @@ function CameraFit({ target }: { target: THREE.Group | null }) {
     box.getCenter(center);
     const radius = size.length() / 2;
 
-    // Leave room under the feet so the contact shadow isn't clipped, and bias
-    // the framing downward so that extra room sits at the bottom.
-    const shadowPad = size.y * 0.16;
-    const fitHeight = size.y + shadowPad;
-    center.y -= shadowPad / 2;
+    // Leave room under the feet for the contact shadow, generous room above the
+    // head for tall motions (Jump), and side room for lateral motions (Run) so
+    // the character is never clipped while animating.
+    const bottomPad = size.y * 0.12;
+    const topPad = size.y * 0.24;
+    const sidePad = size.x * 0.15;
+    const fitHeight = size.y + bottomPad + topPad;
+    const fitWidth = size.x + sidePad * 2;
+    // Recentre the framed region so the extra headroom sits above the character.
+    center.y += (topPad - bottomPad) / 2;
 
     const aspect = width / height;
     const vFov = (camera.fov * Math.PI) / 180;
     const hFov = 2 * Math.atan(Math.tan(vFov / 2) * aspect);
-    // Fit by actual box extents so a tall character fills the stage height.
+    // Fit by padded extents so the whole character + motion range stays visible.
     const distV = fitHeight / 2 / Math.tan(vFov / 2);
-    const distH = size.x / 2 / Math.tan(hFov / 2);
-    const dist = Math.max(distV, distH) * 1.06; // small margin → pet fills the stage
+    const distH = fitWidth / 2 / Math.tan(hFov / 2);
+    const dist = Math.max(distV, distH) * 1.04;
 
     // Look from slightly above & in front, like the reference.
     const dir = new THREE.Vector3(0, 0.1, 1).normalize();
@@ -123,6 +212,11 @@ function SceneContent({
           onGestureEnd={onGestureEnd}
           onError={setError}
         />
+      </Suspense>
+
+      {/* Bãi biển 3D làm mặt sàn quanh nhân vật. */}
+      <Suspense fallback={null}>
+        <BeachFloor />
       </Suspense>
 
       <ContactShadows position={[0, -1, 0]} opacity={0.4} scale={8} blur={2} />

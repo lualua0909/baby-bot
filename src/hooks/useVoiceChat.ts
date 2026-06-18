@@ -4,6 +4,7 @@ import { useRef, useEffect, useCallback, useState } from 'react';
 import { useAppStore } from '@/store/appStore';
 import { VoiceService } from '@/lib/voice/VoiceService';
 import { buildVoiceChatPrompt } from '@/lib/ai/prompts';
+import { friendlyNetworkError } from '@/lib/utils';
 import { LipSyncManager } from '@/lib/lipSync/LipSyncManager';
 import { useAdminConfig } from '@/hooks/useAdminConfig';
 import type { SttProviderType, TtsProviderType } from '@/types/admin';
@@ -21,8 +22,13 @@ export function useVoiceChat(lipSyncRef: React.MutableRefObject<LipSyncManager |
   const ttsProvider: TtsProviderType = adminConfig?.ttsProvider ?? 'openai-tts';
 
   const serviceRef = useRef<VoiceService | null>(null);
+  const isListeningRef = useRef(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [isListening, setIsListening] = useState(false);
+
+  useEffect(() => {
+    isListeningRef.current = isListening;
+  }, [isListening]);
 
   const processTranscript = useCallback(
     async (text: string) => {
@@ -37,17 +43,16 @@ export function useVoiceChat(lipSyncRef: React.MutableRefObject<LipSyncManager |
         setLastResponse(response);
         setSubtitle(response);
         await service.speak(response);
-      } catch {
-        setSubtitle('Không thể kết nối. Thử lại nhé!');
+      } catch (err) {
+        setSubtitle(`Lỗi: ${friendlyNetworkError(err, 'Không thể phát giọng nói')}`);
         setAIState('IDLE');
+        setIsSpeaking(false);
       }
     },
     [settings.petName, setAIState, setLastResponse, setSubtitle]
   );
 
   useEffect(() => {
-    if (!adminConfig) return;
-
     const service = new VoiceService(sttProvider, ttsProvider);
 
     service.setCallbacks({
@@ -105,22 +110,39 @@ export function useVoiceChat(lipSyncRef: React.MutableRefObject<LipSyncManager |
   ]);
 
   const toggleListening = useCallback(async () => {
-    const service = serviceRef.current;
-    if (!service) return;
-
     if (isListening) {
-      service.stopListening();
+      serviceRef.current?.stopListening();
       return;
     }
+
+    const service = serviceRef.current;
+    if (!service) return;
 
     setSubtitle('');
     await service.startListening();
   }, [isListening, setSubtitle]);
 
+  const startListening = useCallback(async () => {
+    if (isListeningRef.current) return;
+
+    const service = serviceRef.current;
+    if (!service) return;
+
+    setSubtitle('');
+    await service.startListening();
+  }, [setSubtitle]);
+
+  const stopListening = useCallback(() => {
+    serviceRef.current?.stopListening();
+  }, []);
+
   const speakText = useCallback(
     async (text: string, systemPrompt?: string) => {
       const service = serviceRef.current;
-      if (!service) return;
+      if (!service) {
+        setSubtitle('Đang khởi tạo giọng nói... Vui lòng thử lại sau vài giây.');
+        return;
+      }
 
       setAIState('THINKING');
       try {
@@ -130,9 +152,10 @@ export function useVoiceChat(lipSyncRef: React.MutableRefObject<LipSyncManager |
         setLastResponse(response);
         setSubtitle(response);
         await service.speak(response);
-      } catch {
-        setSubtitle('Có lỗi xảy ra!');
+      } catch (err) {
+        setSubtitle(`Lỗi: ${friendlyNetworkError(err, 'Không thể phát giọng nói')}`);
         setAIState('IDLE');
+        setIsSpeaking(false);
       }
     },
     [setAIState, setLastResponse, setSubtitle]
@@ -148,5 +171,5 @@ export function useVoiceChat(lipSyncRef: React.MutableRefObject<LipSyncManager |
     [setSubtitle]
   );
 
-  return { isSpeaking, isListening, toggleListening, speakText, speakChunk, sttProvider };
+  return { isSpeaking, isListening, toggleListening, startListening, stopListening, speakText, speakChunk, sttProvider };
 }

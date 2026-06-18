@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import type { AIState, AppMode, StoryTheme, GameType } from '@/types/ai';
 import type { CharacterAnimation } from '@/types/animation';
+import { ALL_ANIMATIONS } from '@/types/animation';
 import { AI_STATE_ANIMATION_MAP } from '@/lib/animation/animationMap';
 
 export interface AppSettings {
@@ -17,6 +18,8 @@ interface AppStoreState {
   aiState: AIState;
   currentAnimation: CharacterAnimation;
   overrideAnimation: CharacterAnimation | null;
+  /** Animation clips auto-detected from the loaded GLB. */
+  availableAnimations: string[];
   appMode: AppMode;
   activeStoryTheme: StoryTheme | null;
   activeGame: GameType | null;
@@ -31,6 +34,7 @@ interface AppStoreActions {
   setAIState: (state: AIState) => void;
   setAnimation: (animation: CharacterAnimation) => void;
   setOverrideAnimation: (animation: CharacterAnimation | null) => void;
+  setAvailableAnimations: (names: string[]) => void;
   syncAnimationFromAIState: () => void;
   restAfterGesture: () => void;
   setAppMode: (mode: AppMode) => void;
@@ -64,6 +68,7 @@ export const useAppStore = create<AppStore>()(
       aiState: 'IDLE',
       currentAnimation: 'Idle',
       overrideAnimation: null,
+      availableAnimations: ALL_ANIMATIONS,
       appMode: 'home',
       activeStoryTheme: null,
       activeGame: null,
@@ -81,6 +86,9 @@ export const useAppStore = create<AppStore>()(
       setAnimation: (currentAnimation) => set({ currentAnimation, overrideAnimation: currentAnimation }),
 
       setOverrideAnimation: (overrideAnimation) => set({ overrideAnimation }),
+
+      setAvailableAnimations: (availableAnimations) =>
+        set({ availableAnimations: availableAnimations.length ? availableAnimations : ALL_ANIMATIONS }),
 
       syncAnimationFromAIState: () => {
         const { aiState, overrideAnimation } = get();

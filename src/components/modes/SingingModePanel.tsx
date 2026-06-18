@@ -1,10 +1,9 @@
 'use client';
 
-import { useCallback, useRef } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 import { useAppStore } from '@/store/appStore';
 import { buildSingingPrompt } from '@/lib/ai/prompts';
 import { SINGING_ANIMATIONS } from '@/lib/animation/animationMap';
-import KidButton from '@/components/ui/KidButton';
 
 interface SingingModePanelProps {
   speakText: (text: string, systemPrompt?: string) => Promise<void>;
@@ -15,6 +14,7 @@ export default function SingingModePanel({ speakText }: SingingModePanelProps) {
   const setAnimation = useAppStore((s) => s.setAnimation);
   const setAIState = useAppStore((s) => s.setAIState);
   const animIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const startedRef = useRef(false);
 
   const startSinging = useCallback(async () => {
     setAIState('SPEAKING');
@@ -35,12 +35,18 @@ export default function SingingModePanel({ speakText }: SingingModePanelProps) {
     setAIState('IDLE');
   }, [petName, setAIState, setAnimation, speakText]);
 
-  return (
-    <div className="flex flex-col items-center gap-3 px-4 py-3">
-      <p className="text-center font-bold text-orange-500">🎵 Hát cùng bạn thú!</p>
-      <KidButton color="#F39C12" size="lg" onClick={startSinging}>
-        🎶
-      </KidButton>
-    </div>
-  );
+  useEffect(() => {
+    if (startedRef.current) return;
+    startedRef.current = true;
+    void startSinging();
+
+    return () => {
+      if (animIntervalRef.current) {
+        clearInterval(animIntervalRef.current);
+        animIntervalRef.current = null;
+      }
+    };
+  }, [startSinging]);
+
+  return null;
 }

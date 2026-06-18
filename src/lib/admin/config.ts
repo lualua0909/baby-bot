@@ -11,7 +11,7 @@ const CONFIG_PATH = path.join(CONFIG_DIR, 'admin-config.json');
 
 export const DEFAULT_ADMIN_CONFIG: AdminConfig = {
   sttProvider: 'web-speech',
-  ttsProvider: 'elevenlabs',
+  ttsProvider: 'openai-tts',
   realtimeModel: REALTIME_MODEL_CHEAP,
   transcriptionModel: TRANSCRIPTION_MODEL_CHEAP,
   updatedAt: new Date().toISOString(),

@@ -5,6 +5,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import TopBar from '@/components/layout/TopBar';
 import BottomMenu from '@/components/layout/BottomMenu';
 import PetCanvas from '@/components/three/PetCanvas';
+import AIStateBadge from '@/components/ui/AIStateBadge';
 import VoiceChatPanel from '@/components/modes/VoiceChatPanel';
 import StoryModeModal from '@/components/modes/StoryModeModal';
 import { useStoryMode } from '@/hooks/useStoryMode';
@@ -19,8 +20,10 @@ import { useVoiceChat } from '@/hooks/useVoiceChat';
 import { useAppStore } from '@/store/appStore';
 import { LipSyncManager } from '@/lib/lipSync/LipSyncManager';
 import type { GameType, StoryTheme } from '@/types/ai';
-import KidModal from '@/components/ui/KidModal';
-import FloatingDecor from '@/components/ui/FloatingDecor';
+import { CartoonDialog } from '@/components/cartoon';
+import { cartoonBackground } from '@/styles/cartoon-tokens';
+import { cn } from '@/lib/utils';
+import EmotionBar from '@/components/ui/EmotionBar';
 
 export default function AppShell() {
   const appMode = useAppStore((s) => s.appMode);
@@ -29,7 +32,8 @@ export default function AppShell() {
   const setActiveGame = useAppStore((s) => s.setActiveGame);
 
   const lipSyncRef = useRef<LipSyncManager | null>(null);
-  const { isSpeaking, isListening, toggleListening, speakText, speakChunk } = useVoiceChat(lipSyncRef);
+  const { isSpeaking, isListening, toggleListening, startListening, stopListening, speakText, speakChunk } =
+    useVoiceChat(lipSyncRef);
   const { startStory } = useStoryMode(speakText, speakChunk);
 
   const [storyOpen, setStoryOpen] = useState(false);
@@ -39,6 +43,20 @@ export default function AppShell() {
     if (appMode === 'story') setStoryOpen(true);
     if (appMode === 'game' && !activeGame) setGamePickerOpen(true);
   }, [appMode, activeGame]);
+
+  const prevAppModeRef = useRef(appMode);
+
+  useEffect(() => {
+    const enteredVoice = appMode === 'voice' && prevAppModeRef.current !== 'voice';
+    const leftVoice = appMode !== 'voice' && prevAppModeRef.current === 'voice';
+    prevAppModeRef.current = appMode;
+
+    if (enteredVoice) {
+      void startListening();
+    } else if (leftVoice) {
+      stopListening();
+    }
+  }, [appMode, startListening, stopListening]);
 
   const handleStorySelect = useCallback(
     (theme: StoryTheme) => {
@@ -61,43 +79,45 @@ export default function AppShell() {
   }, [setActiveGame, setAppMode]);
 
   return (
-    <div className="relative min-h-screen w-full overflow-hidden flex flex-col">
+    <div className={cn('relative h-dvh w-full overflow-hidden flex flex-col', cartoonBackground.page)}>
       {/* ---- Unified backdrop (single colour). PLACEHOLDER: drop a 2D image
            or 3D scene into #backdrop-asset later to replace the gradient. ---- */}
       <div className="fixed inset-0 -z-10 scene-backdrop" aria-hidden>
         <div id="backdrop-asset" data-slot="backdrop-asset" className="absolute inset-0" />
       </div>
 
-      <FloatingDecor />
+      {/* Sân khấu 3D trải full màn hình (phía sau UI) để nhân vật có đủ
+          khoảng dọc, tránh bị cụt đầu khi nhảy. */}
+      <div className="fixed inset-0 z-0">
+        <PetCanvas isSpeaking={isSpeaking} lipSyncRef={lipSyncRef} />
+      </div>
+
       <TopBar />
 
-      <main className="relative z-10 flex-1 flex flex-col px-2 md:px-6 py-2 min-h-0">
-        {/* Pet stage — ~70% of the screen on mobile portrait */}
-        <div className="relative flex-1 min-h-[70vh] max-h-[74vh] md:min-h-[440px] md:max-h-none">
-          <PetCanvas isSpeaking={isSpeaking} lipSyncRef={lipSyncRef} />
-        </div>
+      <EmotionBar speakText={speakText} />
 
+      <main className="relative z-10 flex-1 min-h-0 overflow-hidden pointer-events-none" />
+
+      <div className="absolute inset-x-0 bottom-0 z-20 flex flex-col items-center pointer-events-none">
         <AnimatePresence mode="wait">
           {appMode === 'voice' && (
-            <motion.div key="voice" className="w-full max-w-xl mx-auto" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
+            <motion.div
+              key="voice"
+              className="pointer-events-none flex w-full max-w-xl justify-center px-4"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 12 }}
+            >
               <VoiceChatPanel isListening={isListening} onToggleListening={() => void toggleListening()} />
             </motion.div>
           )}
-          {appMode === 'english' && (
-            <motion.div key="english" className="w-full max-w-xl mx-auto" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
-              <EnglishModePanel speakText={speakText} />
-            </motion.div>
-          )}
-          {appMode === 'singing' && (
-            <motion.div key="singing" className="w-full max-w-xl mx-auto" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
-              <SingingModePanel speakText={speakText} />
-            </motion.div>
-          )}
+          {appMode === 'english' && <EnglishModePanel speakText={speakText} />}
+          {appMode === 'singing' && <SingingModePanel speakText={speakText} />}
         </AnimatePresence>
-      </main>
 
-      <div className="relative z-20">
-        <BottomMenu />
+        <div className="pointer-events-none flex w-full justify-center">
+          <BottomMenu isListening={isListening} />
+        </div>
       </div>
 
       <StoryModeModal
@@ -118,7 +138,7 @@ export default function AppShell() {
         onSelect={handleGameSelect}
       />
 
-      <KidModal open={activeGame !== null} onClose={handleGameComplete} title="🎮 Trò chơi">
+      <CartoonDialog open={activeGame !== null} onClose={handleGameComplete} title="🎮 Trò chơi">
         {activeGame === 'guess-animal' && (
           <GuessAnimalGame speakText={speakText} onComplete={handleGameComplete} />
         )}
@@ -128,9 +148,11 @@ export default function AppShell() {
         {activeGame === 'number-quiz' && (
           <NumberQuizGame speakText={speakText} onComplete={handleGameComplete} />
         )}
-      </KidModal>
+      </CartoonDialog>
 
       <SettingsModal />
+
+      <AIStateBadge />
     </div>
   );
 }

@@ -3,7 +3,11 @@
 import { useState, useCallback } from 'react';
 import { useAppStore } from '@/store/appStore';
 import { buildGameHostPrompt } from '@/lib/ai/prompts';
-import KidButton from '@/components/ui/KidButton';
+import {
+  CartoonButton,
+  CartoonGrid,
+  CartoonStack,
+} from '@/components/cartoon';
 
 const ANIMALS = [
   { emoji: '🐱', name: 'cat', vi: 'mèo' },
@@ -48,16 +52,21 @@ export default function GuessAnimalGame({ speakText, onComplete }: GuessAnimalGa
   );
 
   return (
-    <div className="flex flex-col items-center gap-4 p-4">
-      <p className="font-extrabold text-green-700 text-lg">Con vật này là gì?</p>
+    <CartoonStack>
       <span className="text-7xl animate-bounce">{target.emoji}</span>
-      <div className="grid grid-cols-2 gap-3">
+      <CartoonGrid cols={2}>
         {ANIMALS.map((a) => (
-          <KidButton key={a.name} color="#2ECC71" size="md" onClick={() => handleGuess(a)} disabled={answered}>
+          <CartoonButton
+            key={a.name}
+            variant="green"
+            size="md"
+            onClick={() => handleGuess(a)}
+            disabled={answered}
+          >
             {a.emoji}
-          </KidButton>
+          </CartoonButton>
         ))}
-      </div>
-    </div>
+      </CartoonGrid>
+    </CartoonStack>
   );
 }

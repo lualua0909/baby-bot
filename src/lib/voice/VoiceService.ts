@@ -1,4 +1,5 @@
 import type { VoiceProvider, VoiceProviderType, VoiceCallbacks, TTSResult } from '@/types/voice';
+import { friendlyNetworkError } from '@/lib/utils';
 import { WebSpeechSTTProvider } from './providers/WebSpeechSTTProvider';
 import { OpenAIRealtimeSTTProvider } from './providers/OpenAIRealtimeSTTProvider';
 import { ElevenLabsSTTProvider } from './providers/ElevenLabsSTTProvider';
@@ -72,6 +73,8 @@ export class VoiceService {
       throw new Error('STT provider does not support listening');
     }
 
+    await this.ensureAudioContext();
+
     aiStateMachine.transition('LISTENING', 'mic_start');
     this.callbacks.onStateChange?.('LISTENING');
     this.callbacks.onListeningStart?.();
@@ -107,31 +110,54 @@ export class VoiceService {
     this.callbacks.onStateChange?.('SPEAKING');
     this.callbacks.onSpeakingStart?.(text);
 
-    const result: TTSResult = await this.ttsProvider.synthesize(text);
-    await this.playAudio(result.audioUrl);
+    try {
+      const result: TTSResult = await this.ttsProvider.synthesize(text);
+      await this.playAudio(result.audioUrl);
+    } catch (apiError) {
+      console.warn('API TTS failed, falling back to browser speech:', apiError);
+      try {
+        await this.speakWithBrowserSynthesis(text);
+      } catch (fallbackError) {
+        this.finishSpeaking('error');
+        throw fallbackError;
+      }
+    }
+  }
+
+  /** Unlock/resume Web Audio — required after user gesture for routed playback. */
+  private async ensureAudioContext(): Promise<AudioContext> {
+    if (!this.audioContext || this.audioContext.state === 'closed') {
+      this.audioContext = new AudioContext();
+    }
+    if (this.audioContext.state === 'suspended') {
+      await this.audioContext.resume();
+    }
+    return this.audioContext;
+  }
+
+  private finishSpeaking(reason: 'tts_end' | 'error'): void {
+    aiStateMachine.transition('IDLE', reason);
+    this.callbacks.onStateChange?.('IDLE');
+    this.callbacks.onSpeakingEnd?.();
   }
 
   private async playAudio(url: string): Promise<void> {
+    const audioContext = await this.ensureAudioContext();
+
     return new Promise((resolve, reject) => {
       const audio = new Audio(url);
       this.audio = audio;
 
-      if (!this.audioContext) {
-        this.audioContext = new AudioContext();
-      }
-
       if (this.onAudioConnect) {
-        this.onAudioConnect(audio, this.audioContext);
+        this.onAudioConnect(audio, audioContext);
       } else {
-        const source = this.audioContext.createMediaElementSource(audio);
-        source.connect(this.audioContext.destination);
+        const source = audioContext.createMediaElementSource(audio);
+        source.connect(audioContext.destination);
       }
 
       audio.onended = () => {
         URL.revokeObjectURL(url);
-        aiStateMachine.transition('IDLE', 'tts_end');
-        this.callbacks.onStateChange?.('IDLE');
-        this.callbacks.onSpeakingEnd?.();
+        this.finishSpeaking('tts_end');
         resolve();
       };
 
@@ -144,26 +170,81 @@ export class VoiceService {
     });
   }
 
+  private waitForSpeechVoices(): Promise<SpeechSynthesisVoice[]> {
+    return new Promise((resolve) => {
+      const voices = window.speechSynthesis.getVoices();
+      if (voices.length > 0) {
+        resolve(voices);
+        return;
+      }
+      window.speechSynthesis.onvoiceschanged = () => {
+        resolve(window.speechSynthesis.getVoices());
+      };
+    });
+  }
+
+  private async speakWithBrowserSynthesis(text: string): Promise<void> {
+    if (typeof window === 'undefined' || !window.speechSynthesis) {
+      throw new Error('Trình duyệt không hỗ trợ đọc văn bản');
+    }
+
+    window.speechSynthesis.cancel();
+    const voices = await this.waitForSpeechVoices();
+    const voice =
+      voices.find((v) => v.lang.toLowerCase().startsWith('vi')) ??
+      voices.find((v) => v.lang.toLowerCase().includes('vi')) ??
+      null;
+
+    return new Promise((resolve, reject) => {
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.lang = 'vi-VN';
+      utterance.rate = 0.95;
+      utterance.pitch = 1.05;
+      if (voice) utterance.voice = voice;
+
+      utterance.onend = () => {
+        this.finishSpeaking('tts_end');
+        resolve();
+      };
+      utterance.onerror = () => {
+        reject(new Error('Không thể phát giọng nói trên trình duyệt'));
+      };
+
+      window.speechSynthesis.speak(utterance);
+    });
+  }
+
   stopCurrentAudio(): void {
     if (this.audio) {
       this.audio.pause();
       this.audio = null;
     }
+    if (typeof window !== 'undefined') {
+      window.speechSynthesis?.cancel();
+    }
   }
 
   async fetchLLMResponse(systemPrompt: string, userMessage: string): Promise<string> {
-    const response = await fetch('/api/chat', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        message: userMessage,
-        systemPrompt,
-        petState: { name: 'Pet' },
-      }),
-    });
+    let response: Response;
+    try {
+      response = await fetch('/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          message: userMessage,
+          systemPrompt,
+          petState: { name: 'Pet' },
+        }),
+      });
+    } catch {
+      throw new Error(friendlyNetworkError(new Error('Failed to fetch')));
+    }
 
     if (!response.ok) {
-      throw new Error('LLM request failed');
+      const errBody = (await response.json().catch(() => ({}))) as { error?: string };
+      throw new Error(
+        typeof errBody.error === 'string' ? errBody.error : 'Không nhận được phản hồi từ AI'
+      );
     }
 
     const reader = response.body?.getReader();
@@ -172,10 +253,14 @@ export class VoiceService {
     const decoder = new TextDecoder();
     let fullText = '';
 
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) break;
-      fullText += decoder.decode(value, { stream: true });
+    try {
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        fullText += decoder.decode(value, { stream: true });
+      }
+    } catch (err) {
+      throw new Error(friendlyNetworkError(err));
     }
 
     return fullText.trim();

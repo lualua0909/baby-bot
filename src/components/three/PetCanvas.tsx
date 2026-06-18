@@ -5,7 +5,6 @@ import { useRef, useCallback } from 'react';
 import { useAppStore } from '@/store/appStore';
 import { LipSyncManager } from '@/lib/lipSync/LipSyncManager';
 import type { AnimationController } from '@/lib/animation/AnimationController';
-import AIStateBadge from '@/components/ui/AIStateBadge';
 
 const PetScene = dynamic(() => import('./PetScene'), {
   ssr: false,
@@ -26,6 +25,7 @@ export default function PetCanvas({ isSpeaking, lipSyncRef }: PetCanvasProps) {
   const characterFile = useAppStore((s) => s.settings.characterFile);
   const currentAnimation = useAppStore((s) => s.overrideAnimation ?? s.currentAnimation);
   const restAfterGesture = useAppStore((s) => s.restAfterGesture);
+  const setAvailableAnimations = useAppStore((s) => s.setAvailableAnimations);
   const characterUrl = `/api/character/${encodeURIComponent(characterFile)}`;
 
   const internalLipSyncRef = useRef<LipSyncManager | null>(null);
@@ -41,7 +41,6 @@ export default function PetCanvas({ isSpeaking, lipSyncRef }: PetCanvasProps) {
 
   return (
     <div className="absolute inset-0">
-      <AIStateBadge />
       <PetScene
         characterUrl={characterUrl}
         animation={currentAnimation}
@@ -49,6 +48,7 @@ export default function PetCanvas({ isSpeaking, lipSyncRef }: PetCanvasProps) {
         onLipSyncReady={handleLipSyncReady}
         onControllerReady={(c) => {
           controllerRef.current = c;
+          setAvailableAnimations(c.getAvailableAnimations());
         }}
         onGestureEnd={restAfterGesture}
       />

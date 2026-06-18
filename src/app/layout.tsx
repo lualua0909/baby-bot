@@ -1,6 +1,18 @@
 import type { Metadata } from 'next';
-import { Nunito } from 'next/font/google';
+import { Baloo_2, Fredoka, Nunito } from 'next/font/google';
 import './globals.css';
+
+const baloo = Baloo_2({
+  subsets: ['latin', 'vietnamese'],
+  weight: ['400', '500', '600', '700', '800'],
+  variable: '--font-baloo',
+});
+
+const fredoka = Fredoka({
+  subsets: ['latin'],
+  weight: ['400', '500', '600', '700'],
+  variable: '--font-fredoka',
+});
 
 const nunito = Nunito({
   subsets: ['latin', 'vietnamese'],
@@ -20,7 +32,9 @@ export default function RootLayout({
 }) {
   return (
     <html lang="vi">
-      <body className={`${nunito.variable} min-h-screen font-nunito antialiased`}>
+      <body
+        className={`${baloo.variable} ${fredoka.variable} ${nunito.variable} min-h-screen font-cartoon antialiased`}
+      >
         {children}
       </body>
     </html>

@@ -2,14 +2,21 @@
 
 import { useState, useCallback } from 'react';
 import { useAppStore } from '@/store/appStore';
-import { buildGameHostPrompt } from '@/lib/ai/prompts';
-import KidButton from '@/components/ui/KidButton';
+import {
+  CartoonButton,
+  CartoonCard,
+  CartoonGrid,
+  CartoonStack,
+} from '@/components/cartoon';
+import type { CartoonVariant } from '@/styles/cartoon-tokens';
+import { cartoonTypography } from '@/styles/cartoon-tokens';
+import { cn } from '@/lib/utils';
 
-const COLORS = [
-  { name: 'red', vi: 'đỏ', hex: '#EF4444' },
-  { name: 'blue', vi: 'xanh dương', hex: '#3B82F6' },
-  { name: 'yellow', vi: 'vàng', hex: '#FBBF24' },
-  { name: 'green', vi: 'xanh lá', hex: '#22C55E' },
+const COLORS: { name: string; vi: string; variant: CartoonVariant }[] = [
+  { name: 'red', vi: 'đỏ', variant: 'pink' },
+  { name: 'blue', vi: 'xanh dương', variant: 'blue' },
+  { name: 'yellow', vi: 'vàng', variant: 'yellow' },
+  { name: 'green', vi: 'xanh lá', variant: 'green' },
 ];
 
 interface GuessColorGameProps {
@@ -18,7 +25,6 @@ interface GuessColorGameProps {
 }
 
 export default function GuessColorGame({ speakText, onComplete }: GuessColorGameProps) {
-  const petName = useAppStore((s) => s.settings.petName);
   const setAnimation = useAppStore((s) => s.setAnimation);
   const setAIState = useAppStore((s) => s.setAIState);
   const addCoins = useAppStore((s) => s.addCoins);
@@ -35,30 +41,32 @@ export default function GuessColorGame({ speakText, onComplete }: GuessColorGame
       setAIState(correct ? 'HAPPY' : 'SAD');
       if (correct) addCoins(10);
 
-      const prompt = buildGameHostPrompt(petName, 'Guess Color');
       await speakText(
-        correct ? `Đúng! Màu ${target.vi}!` : `Sai rồi! Đáp án là màu ${target.vi}!`,
-        prompt
+        correct ? `Đúng! Màu ${target.vi}!` : `Sai rồi! Đáp án là màu ${target.vi}!`
       );
       setTimeout(onComplete, 2000);
     },
-    [answered, target, petName, setAnimation, setAIState, addCoins, speakText, onComplete]
+    [answered, target, setAnimation, setAIState, addCoins, speakText, onComplete]
   );
 
   return (
-    <div className="flex flex-col items-center gap-4 p-4">
-      <p className="font-extrabold text-green-700 text-lg">Màu này là gì?</p>
-      <div
-        className="w-24 h-24 rounded-2xl border-4 border-white shadow-kid"
-        style={{ backgroundColor: target.hex }}
-      />
-      <div className="grid grid-cols-2 gap-3">
+    <CartoonStack>
+      <CartoonCard variant={target.variant} className="!p-6 w-32 h-32 flex items-center justify-center">
+        <span className="text-4xl">🎨</span>
+      </CartoonCard>
+      <CartoonGrid cols={2}>
         {COLORS.map((c) => (
-          <KidButton key={c.name} color={c.hex} size="md" onClick={() => handleGuess(c)} disabled={answered}>
-            <span className="text-xs font-bold text-white drop-shadow">{c.vi}</span>
-          </KidButton>
+          <CartoonButton
+            key={c.name}
+            variant={c.variant}
+            size="md"
+            onClick={() => handleGuess(c)}
+            disabled={answered}
+          >
+            <span className={cn(cartoonTypography.caption, 'text-white')}>{c.vi}</span>
+          </CartoonButton>
         ))}
-      </div>
-    </div>
+      </CartoonGrid>
+    </CartoonStack>
   );
 }

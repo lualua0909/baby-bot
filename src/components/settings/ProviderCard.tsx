@@ -1,6 +1,11 @@
 'use client';
 
 import type { ProviderOption } from '@/types/admin';
+import { Badge } from '@/components/ui/Badge';
+import { List, ListItem } from '@/components/ui/List';
+import { CartoonCard } from '@/components/cartoon';
+import { cartoonTypography } from '@/styles/cartoon-tokens';
+import { cn } from '@/lib/utils';
 
 interface ProviderCardProps<T extends string> {
   option: ProviderOption<T>;
@@ -16,49 +21,46 @@ export default function ProviderCard<T extends string>({
   freeBadge = false,
 }: ProviderCardProps<T>) {
   return (
-    <button
-      type="button"
-      onClick={onSelect}
-      className={`text-left rounded-xl border-2 p-5 transition-all w-full ${
-        isSelected
-          ? 'border-blue-500 bg-blue-50 shadow-sm'
-          : 'border-slate-200 bg-white hover:border-slate-300'
-      }`}
+    <CartoonCard
+      interactive
+      onCardClick={onSelect}
+      variant={isSelected ? 'green' : 'white'}
+      className={isSelected ? 'ring-4 ring-green-600/50' : undefined}
     >
-      <div className="flex items-start justify-between gap-3">
+      <div className="flex items-start justify-between gap-6">
         <div>
-          <p className="font-bold text-slate-900">{option.name}</p>
-          <p className="text-sm text-slate-600 mt-1">{option.description}</p>
+          <p className={cn(cartoonTypography.subheading, isSelected ? 'text-white' : 'text-[#4a6a7d]')}>
+            {option.name}
+          </p>
+          <p className={cn(cartoonTypography.body, isSelected ? 'text-white/80' : 'text-[#4a6a7d]/70', 'mt-2')}>
+            {option.description}
+          </p>
         </div>
-        <span
-          className={`shrink-0 text-xs font-bold px-2 py-1 rounded-full ${
-            freeBadge ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700'
-          }`}
-        >
-          {option.cost}
-        </span>
+        <Badge variant={freeBadge ? 'success' : 'warning'}>{option.cost}</Badge>
       </div>
 
-      <div className="grid sm:grid-cols-2 gap-3 mt-4 text-sm">
+      <div className="grid sm:grid-cols-2 gap-6 mt-6">
         <div>
-          <p className="font-semibold text-green-700 mb-1">Ưu điểm</p>
-          <ul className="text-slate-600 space-y-0.5">
+          <p className={cn(cartoonTypography.body, 'text-green-600 mb-2')}>Ưu điểm</p>
+          <List className={cn(cartoonTypography.caption, isSelected ? 'text-white/80' : 'text-[#4a6a7d]/70')}>
             {option.pros.map((p) => (
-              <li key={p}>✓ {p}</li>
+              <ListItem key={p}>✓ {p}</ListItem>
             ))}
-          </ul>
+          </List>
         </div>
         <div>
-          <p className="font-semibold text-red-600 mb-1">Nhược điểm</p>
-          <ul className="text-slate-600 space-y-0.5">
+          <p className={cn(cartoonTypography.body, 'text-pink-600 mb-2')}>Nhược điểm</p>
+          <List className={cn(cartoonTypography.caption, isSelected ? 'text-white/80' : 'text-[#4a6a7d]/70')}>
             {option.cons.map((c) => (
-              <li key={c}>✗ {c}</li>
+              <ListItem key={c}>✗ {c}</ListItem>
             ))}
-          </ul>
+          </List>
         </div>
       </div>
 
-      {isSelected && <p className="mt-3 text-xs font-semibold text-blue-600">● Đã chọn</p>}
-    </button>
+      {isSelected && (
+        <p className={cn(cartoonTypography.body, 'text-white mt-6')}>⭐ Đã chọn!</p>
+      )}
+    </CartoonCard>
   );
 }

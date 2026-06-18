@@ -1,8 +1,9 @@
 'use client';
 
 import { GAME_OPTIONS, type GameType } from '@/types/ai';
-import KidModal from '@/components/ui/KidModal';
-import KidCardButton from '@/components/ui/KidCardButton';
+import { CartoonCard, CartoonDialog, CartoonRow, CartoonStack } from '@/components/cartoon';
+import { cartoonTypography } from '@/styles/cartoon-tokens';
+import { cn } from '@/lib/utils';
 
 interface GameModeModalProps {
   open: boolean;
@@ -12,23 +13,25 @@ interface GameModeModalProps {
 
 export default function GameModeModal({ open, onClose, onSelect }: GameModeModalProps) {
   return (
-    <KidModal open={open} onClose={onClose} title="🎮 Chọn trò chơi">
-      <div className="flex flex-col gap-3">
+    <CartoonDialog open={open} onClose={onClose} title="🎮 Chọn trò chơi">
+      <CartoonStack align="stretch">
         {GAME_OPTIONS.map((game) => (
-          <KidCardButton
+          <CartoonCard
             key={game.id}
-            backgroundColor="#ECFDF5"
-            className="!flex-row !items-center !gap-4 !p-4"
-            onClick={() => {
+            interactive
+            variant="green"
+            onCardClick={() => {
               onSelect(game.id);
               onClose();
             }}
           >
-            <span className="text-3xl">{game.emoji}</span>
-            <span className="font-extrabold text-green-700 text-lg">{game.label}</span>
-          </KidCardButton>
+            <CartoonRow>
+              <span className="text-4xl">{game.emoji}</span>
+              <span className={cn(cartoonTypography.subheading, 'text-white')}>{game.label}</span>
+            </CartoonRow>
+          </CartoonCard>
         ))}
-      </div>
-    </KidModal>
+      </CartoonStack>
+    </CartoonDialog>
   );
 }
