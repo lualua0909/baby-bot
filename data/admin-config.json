@@ -1,0 +1,7 @@
+{
+  "sttProvider": "web-speech",
+  "ttsProvider": "elevenlabs",
+  "realtimeModel": "gpt-4o-mini-realtime-preview",
+  "transcriptionModel": "whisper-1",
+  "updatedAt": "2026-06-18T11:21:57.210Z"
+}
