@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { PetState } from '@/lib/petState';
 import { detectEmotionFromMessage } from '@/lib/emotionDetector';
 import { TypingDots } from '@/components/ui/TypingDots';
+import { Button } from '@/components/ui/Button';
 
 interface Message {
   role: 'user' | 'pet';
@@ -198,15 +199,15 @@ export default function ChatInterface({
               transition-all duration-200"
             disabled={isTyping}
           />
-          <button
+          <Button
             type="submit"
+            variant="blue"
+            size="sm"
             disabled={!input.trim() || isTyping}
-            className="px-4 py-2.5 rounded-xl bg-indigo-600/30 text-white/70 text-sm font-outfit
-              hover:bg-indigo-600/50 disabled:opacity-30 disabled:cursor-not-allowed
-              transition-all duration-200"
+            className="normal-case"
           >
             Gửi
-          </button>
+          </Button>
         </div>
       </form>
     </div>

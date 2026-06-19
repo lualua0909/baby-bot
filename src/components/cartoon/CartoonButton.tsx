@@ -1,25 +1,31 @@
 'use client';
 
-import { motion } from 'framer-motion';
 import { forwardRef, type ReactNode } from 'react';
 import { cn } from '@/lib/utils';
-import {
-  cartoonButtonBase,
-  cartoonButtonSizes,
-  cartoonMotion,
-  cartoonRadius,
-  cartoonVariant,
-  cartoonVariantFill,
-  cartoonNavGlassButton,
-  cartoonNavGlassVariant,
-  type CartoonVariant,
-} from '@/styles/cartoon-tokens';
+import { Button, type ButtonSize, type ButtonVariant } from '@/components/ui/Button';
+import { cartoonVariantFill, type CartoonVariant } from '@/styles/cartoon-tokens';
+
+const VARIANT_MAP: Record<CartoonVariant, ButtonVariant> = {
+  green: 'green',
+  yellow: 'yellow',
+  pink: 'red',
+  blue: 'blue',
+  purple: 'purple',
+};
+
+const SIZE_MAP: Record<'sm' | 'md' | 'lg' | 'play', ButtonSize> = {
+  sm: 'sm',
+  md: 'default',
+  lg: 'lg',
+  play: 'play',
+};
 
 export interface CartoonButtonProps {
   variant?: CartoonVariant;
-  size?: keyof typeof cartoonButtonSizes;
+  size?: keyof typeof SIZE_MAP;
   active?: boolean;
   pulsing?: boolean;
+  /** @deprecated Glass nav styling removed — uses standard cartoon button */
   glass?: boolean;
   children: ReactNode;
   className?: string;
@@ -33,9 +39,7 @@ export const CartoonButton = forwardRef<HTMLButtonElement, CartoonButtonProps>(
     {
       variant = 'green',
       size = 'md',
-      active = false,
       pulsing = false,
-      glass = false,
       className,
       children,
       disabled,
@@ -49,33 +53,22 @@ export const CartoonButton = forwardRef<HTMLButtonElement, CartoonButtonProps>(
         {pulsing && !disabled && (
           <span
             className={cn(
-              'absolute inset-0 animate-ping',
-              glass ? 'opacity-15' : 'opacity-40',
-              cartoonRadius.button,
-              glass ? cartoonNavGlassButton[variant] : cartoonVariantFill[variant]
+              'absolute inset-0 animate-ping rounded-[10px] opacity-40',
+              cartoonVariantFill[variant]
             )}
           />
         )}
-        <motion.button
+        <Button
           ref={ref}
-          type="button"
+          variant={VARIANT_MAP[variant]}
+          size={SIZE_MAP[size]}
           disabled={disabled}
           aria-label={ariaLabel}
           onClick={onClick}
-          whileHover={disabled ? undefined : cartoonMotion.buttonHover}
-          whileTap={disabled ? undefined : cartoonMotion.buttonTap}
-          transition={cartoonMotion.modalTransition}
-          className={cn(
-            cartoonButtonBase,
-            glass ? cartoonNavGlassVariant(variant) : cartoonVariant(variant),
-            glass && '!border-0 !shadow-none',
-            cartoonButtonSizes[size],
-            active && 'translate-y-1',
-            className
-          )}
+          className={className}
         >
           <span className="relative z-10 leading-none">{children}</span>
-        </motion.button>
+        </Button>
       </div>
     );
   }

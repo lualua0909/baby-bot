@@ -1,9 +1,8 @@
 'use client';
 
-import { motion } from 'framer-motion';
 import { useAppStore } from '@/store/appStore';
 import type { CharacterAnimation } from '@/types/animation';
-import { cartoonTypography } from '@/styles/cartoon-tokens';
+import { Button } from '@/components/ui/Button';
 import { cn } from '@/lib/utils';
 
 /** Nhãn + câu nói tiếng Việt cho từng animation clip có trong GLB. */
@@ -52,29 +51,27 @@ export default function EmotionBar({ speakText }: EmotionBarProps) {
   const active = overrideAnimation ?? currentAnimation;
 
   return (
-    <div className="pointer-events-auto fixed top-1/2 left-2 z-30 flex max-h-[min(80vh,calc(100dvh-10rem))] -translate-y-1/2 flex-col gap-1.5 overflow-y-auto [scrollbar-width:none] sm:left-3 md:left-5 [&::-webkit-scrollbar]:hidden">
+    <div className="pointer-events-auto fixed top-1/2 left-2 z-30 flex max-h-[min(80vh,calc(100dvh-10rem))] -translate-y-1/2 flex-col gap-1 overflow-y-auto p-2 [scrollbar-width:none] sm:left-3 md:left-5 [&::-webkit-scrollbar]:hidden">
       {availableAnimations.map((name) => {
           const m = metaFor(name);
           return (
-            <motion.button
-              key={name}
+            <div key={name} className="shrink-0 pr-2 pb-2">
+            <Button
               type="button"
+              size="sm"
+              variant={active === name ? 'red' : 'white'}
               onClick={() => {
                 setAnimation(name as CharacterAnimation);
                 void speakText(pickPhrase(m.phrases));
               }}
-              whileHover={{ scale: 1.03 }}
-              whileTap={{ scale: 0.97 }}
               className={cn(
-                cartoonTypography.caption,
-                'shrink-0 rounded-xl border-2 px-3 py-1.5 text-left text-sm font-bold leading-tight transition-colors sm:text-base',
-                active === name
-                  ? 'border-orange-500 bg-orange-400 text-white shadow-[inset_0_2px_4px_rgba(0,0,0,0.2)]'
-                  : 'border-orange-200 bg-orange-50 text-orange-800 hover:bg-orange-100'
+                'min-w-0 w-full normal-case text-left text-sm leading-tight sm:text-base',
+                active !== name && 'opacity-90'
               )}
             >
               {m.label}
-            </motion.button>
+            </Button>
+            </div>
           );
       })}
     </div>

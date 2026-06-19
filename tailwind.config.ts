@@ -15,6 +15,7 @@ const config: Config = {
         baloo: ['var(--font-baloo)', 'Baloo 2', 'cursive'],
         fredoka: ['var(--font-fredoka)', 'Fredoka', 'sans-serif'],
         nunito: ['var(--font-nunito)', 'Nunito', 'system-ui', 'sans-serif'],
+        yatra: ['var(--font-yatra)', 'Yatra One', 'cursive'],
         cartoon: ['var(--font-baloo)', 'var(--font-fredoka)', 'var(--font-nunito)', 'sans-serif'],
       },
       colors: {

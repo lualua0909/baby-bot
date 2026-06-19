@@ -2,57 +2,68 @@ import * as React from 'react';
 import { Slot } from '@radix-ui/react-slot';
 import { cva, type VariantProps } from 'class-variance-authority';
 import { cn } from '@/lib/utils';
-import {
-  cartoonButtonBase,
-  cartoonCardBase,
-  cartoonVariant as getCartoonVariant,
-  type CartoonVariant,
-} from '@/styles/cartoon-tokens';
 
-const buttonVariants = cva(cartoonButtonBase, {
-  variants: {
-    variant: {
-      default: getCartoonVariant('green'),
-      destructive: getCartoonVariant('pink'),
-      outline: cn(cartoonCardBase, 'text-[#4a6a7d] border-purple-700'),
-      secondary: getCartoonVariant('yellow'),
-      ghost: 'border-transparent bg-transparent shadow-none text-[#4a6a7d] hover:scale-105',
-      link: 'border-transparent shadow-none text-purple-700 underline-offset-4 hover:underline',
-      cartoon: getCartoonVariant('green'),
-      card: cn(cartoonCardBase, 'w-full flex-col'),
+const buttonVariants = cva(
+  cn(
+    'cartoon-rect-btn relative inline-flex items-center justify-center overflow-visible',
+    'border-none rounded-[10px] w-auto cursor-pointer',
+    'font-yatra font-bold uppercase whitespace-nowrap text-center',
+    'outline-none transition-all duration-300 select-none',
+    'disabled:opacity-50 disabled:cursor-not-allowed disabled:pointer-events-none'
+  ),
+  {
+    variants: {
+      variant: {
+        white: 'bg-[#EAF4FE] text-[#3e3e3e]',
+        red: 'bg-[#D91424] text-white',
+        brown: 'bg-[#DDA273] text-[#3e3e3e]',
+        yellow: 'bg-[#F2CE16] text-[#3e3e3e]',
+        blue: 'bg-[#C3EDFA] text-[#3e3e3e]',
+        black: 'bg-[#5D6063] text-white',
+        green: 'bg-[#9bf05f] text-[#3e3e3e]',
+        purple: 'bg-[#8B6DFF] text-white',
+        default: 'bg-[#9bf05f] text-[#3e3e3e]',
+        destructive: 'bg-[#D91424] text-white',
+        secondary: 'bg-[#F2CE16] text-[#3e3e3e]',
+        outline: 'bg-[#EAF4FE] text-[#3e3e3e]',
+        ghost:
+          'bg-transparent text-[#3e3e3e] shadow-none normal-case font-cartoon font-bold [&::before]:hidden hover:[&::before]:hidden active:transform-none',
+        link: 'bg-transparent text-[#3e3e3e] shadow-none normal-case font-cartoon font-bold underline-offset-4 hover:underline [&::before]:hidden active:transform-none',
+        cartoon: 'bg-[#9bf05f] text-[#3e3e3e]',
+        card: 'bg-[#EAF4FE] text-[#3e3e3e] w-full flex-col normal-case',
+      },
+      size: {
+        default: 'px-6 py-4 text-lg',
+        sm: 'px-4 py-3 text-base',
+        lg: 'px-8 py-5 text-xl',
+        play: 'min-w-[13rem] px-6 py-4 text-2xl md:text-3xl',
+        icon: 'p-4 text-2xl',
+      },
     },
-    size: {
-      default: 'h-14 px-8 py-4 text-xl',
-      sm: 'min-w-16 min-h-16 text-xl px-8 py-4',
-      lg: 'min-w-28 min-h-28 text-2xl',
-      icon: 'w-16 h-16 text-2xl',
+    defaultVariants: {
+      variant: 'default',
+      size: 'default',
     },
-  },
-  defaultVariants: {
-    variant: 'default',
-    size: 'default',
-  },
-});
+  }
+);
+
+export type ButtonVariant = NonNullable<VariantProps<typeof buttonVariants>['variant']>;
+export type ButtonSize = NonNullable<VariantProps<typeof buttonVariants>['size']>;
 
 export interface ButtonProps
   extends React.ButtonHTMLAttributes<HTMLButtonElement>,
     VariantProps<typeof buttonVariants> {
   asChild?: boolean;
-  active?: boolean;
-  cartoonVariant?: CartoonVariant;
 }
 
 const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
-  ({ className, variant, size, asChild = false, active, cartoonVariant: cv, ...props }, ref) => {
+  ({ className, variant, size, asChild = false, type = 'button', ...props }, ref) => {
     const Comp = asChild ? Slot : 'button';
     return (
       <Comp
-        className={cn(
-          buttonVariants({ variant, size, className }),
-          cv && getCartoonVariant(cv),
-          active && 'translate-y-1'
-        )}
+        className={cn(buttonVariants({ variant, size }), className)}
         ref={ref}
+        type={asChild ? undefined : type}
         {...props}
       />
     );

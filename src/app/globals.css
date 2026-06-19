@@ -69,3 +69,43 @@
     @apply rounded-full bg-purple-600/40 border-4 border-transparent;
   }
 }
+
+/* Cartoon button — unlayered so box-shadow beats Tailwind preflight/utilities */
+.cartoon-rect-btn {
+  text-shadow:
+    0 0 30px rgba(255, 255, 255, 0.45),
+    0 0 60px rgba(255, 255, 255, 0.25);
+  box-shadow:
+    1px 1px #3e3e3e,
+    2px 2px #3e3e3e,
+    3px 3px #3e3e3e,
+    4px 4px #3e3e3e,
+    5px 5px #3e3e3e,
+    6px 6px #3e3e3e,
+    7px 7px #3e3e3e,
+    8px 8px #3e3e3e !important;
+}
+
+.cartoon-rect-btn::before {
+  content: '';
+  border-top-left-radius: 10px;
+  position: absolute;
+  top: 0.4rem;
+  left: 0.4rem;
+  width: 1.5rem;
+  height: 2rem;
+  border-top: 2px solid #3e3e3e;
+  border-left: 2px solid #3e3e3e;
+  opacity: 0.5;
+  transition: all 0.3s;
+  pointer-events: none;
+}
+
+.cartoon-rect-btn:hover::before {
+  width: 4.5rem;
+  height: 0;
+}
+
+.cartoon-rect-btn:active:not(:disabled) {
+  transform: translate(3px, -5px);
+}

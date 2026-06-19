@@ -232,7 +232,7 @@ export default function SettingsPage() {
                   </Alert>
                 )}
 
-                <Button type="button" onClick={() => void handleSave()} disabled={saving || !hasChanges} className="w-full" size="lg">
+                <Button type="button" variant="green" onClick={() => void handleSave()} disabled={saving || !hasChanges} className="w-full normal-case" size="lg">
                   {saving ? (
                     <span className="inline-flex items-center gap-2">
                       <AppIcon name="loader" className="h-4 w-4 animate-spin" />
