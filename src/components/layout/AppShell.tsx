@@ -39,6 +39,12 @@ export default function AppShell() {
 
   const [storyOpen, setStoryOpen] = useState(false);
   const [gamePickerOpen, setGamePickerOpen] = useState(false);
+  const [loadingBgVisible, setLoadingBgVisible] = useState(true);
+
+  const handleSceneReady = useCallback(() => {
+    setLoadingBgVisible(false);
+    document.body.classList.remove('scene-loading');
+  }, []);
 
   useEffect(() => {
     if (appMode === 'story') setStoryOpen(true);
@@ -80,17 +86,34 @@ export default function AppShell() {
   }, [setActiveGame, setAppMode]);
 
   return (
-    <div className={cn('relative h-dvh w-full overflow-hidden flex flex-col', cartoonBackground.page)}>
-      {/* ---- Unified backdrop (single colour). PLACEHOLDER: drop a 2D image
-           or 3D scene into #backdrop-asset later to replace the gradient. ---- */}
-      <div className="fixed inset-0 -z-10 scene-backdrop" aria-hidden>
-        <div id="backdrop-asset" data-slot="backdrop-asset" className="absolute inset-0" />
+    <div
+      className={cn(
+        'relative h-dvh w-full overflow-hidden flex flex-col',
+        loadingBgVisible ? 'bg-transparent' : cartoonBackground.page
+      )}
+    >
+      {/* Nền: gradient mặc định + ảnh loading phía sau (không che UI). */}
+      <div className="fixed inset-0 -z-10" aria-hidden>
+        <div className="scene-backdrop absolute inset-0" />
+        <div
+          id="backdrop-asset"
+          data-slot="backdrop-asset"
+          className={cn(
+            'absolute inset-0 bg-cover bg-center bg-no-repeat transition-opacity duration-500',
+            !loadingBgVisible && 'opacity-0'
+          )}
+          style={{ backgroundImage: "url('/loading.png')" }}
+        />
       </div>
 
       {/* Sân khấu 3D trải full màn hình (phía sau UI) để nhân vật có đủ
           khoảng dọc, tránh bị cụt đầu khi nhảy. */}
       <div className="fixed inset-0 z-0">
-        <PetCanvas isSpeaking={isSpeaking} lipSyncRef={lipSyncRef} />
+        <PetCanvas
+          isSpeaking={isSpeaking}
+          lipSyncRef={lipSyncRef}
+          onSceneReady={handleSceneReady}
+        />
       </div>
 
       <TopBar />

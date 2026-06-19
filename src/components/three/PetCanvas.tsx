@@ -4,25 +4,20 @@ import dynamic from 'next/dynamic';
 import { useRef, useCallback } from 'react';
 import { useAppStore } from '@/store/appStore';
 import { LipSyncManager } from '@/lib/lipSync/LipSyncManager';
-import { AppIcon } from '@/components/ui/AppIcon';
 import type { AnimationController } from '@/lib/animation/AnimationController';
 
 const PetScene = dynamic(() => import('./PetScene'), {
   ssr: false,
-  loading: () => (
-    <div className="w-full h-full flex flex-col items-center justify-center gap-3">
-      <AppIcon name="paw" className="h-12 w-12 animate-bounce text-white" />
-      <div className="text-lg font-extrabold text-white drop-shadow-[0_2px_3px_rgba(0,0,0,0.4)] animate-pulse">Đang tải AI BOT...</div>
-    </div>
-  ),
+  loading: () => null,
 });
 
 interface PetCanvasProps {
   isSpeaking: boolean;
   lipSyncRef?: React.MutableRefObject<LipSyncManager | null>;
+  onSceneReady?: () => void;
 }
 
-export default function PetCanvas({ isSpeaking, lipSyncRef }: PetCanvasProps) {
+export default function PetCanvas({ isSpeaking, lipSyncRef, onSceneReady }: PetCanvasProps) {
   const characterFile = useAppStore((s) => s.settings.characterFile);
   const floorFile = useAppStore((s) => s.settings.floorFile);
   const currentAnimation = useAppStore((s) => s.overrideAnimation ?? s.currentAnimation);
@@ -41,6 +36,10 @@ export default function PetCanvas({ isSpeaking, lipSyncRef }: PetCanvasProps) {
     [lipSyncRef]
   );
 
+  const handleSceneReady = useCallback(() => {
+    onSceneReady?.();
+  }, [onSceneReady]);
+
   return (
     <div className="absolute inset-0">
       <PetScene
@@ -54,6 +53,7 @@ export default function PetCanvas({ isSpeaking, lipSyncRef }: PetCanvasProps) {
           setAvailableAnimations(c.getAvailableAnimations());
         }}
         onGestureEnd={restAfterGesture}
+        onSceneReady={handleSceneReady}
       />
     </div>
   );

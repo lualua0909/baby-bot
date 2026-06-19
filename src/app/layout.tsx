@@ -38,8 +38,11 @@ export default function RootLayout({
 }) {
   return (
     <html lang="vi">
+      <head>
+        <link rel="preload" href="/loading.png" as="image" />
+      </head>
       <body
-        className={`${baloo.variable} ${fredoka.variable} ${nunito.variable} ${yatraOne.variable} min-h-screen font-cartoon antialiased`}
+        className={`${baloo.variable} ${fredoka.variable} ${nunito.variable} ${yatraOne.variable} min-h-screen font-cartoon antialiased scene-loading`}
       >
         {children}
       </body>

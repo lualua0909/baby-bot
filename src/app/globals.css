@@ -40,6 +40,14 @@
     @apply bg-[#DDF4F8] text-foreground antialiased font-cartoon;
     -webkit-tap-highlight-color: transparent;
   }
+
+  /* Fallback nền khi chưa hydrate — gỡ class .scene-loading khi 3D sẵn sàng. */
+  body.scene-loading {
+    background-image: url('/loading.png');
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+  }
 }
 
 @layer components {

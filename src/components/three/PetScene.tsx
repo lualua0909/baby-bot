@@ -23,6 +23,7 @@ interface PetSceneProps {
   onLipSyncReady?: (lipSync: LipSyncManager) => void;
   onControllerReady?: (controller: AnimationController) => void;
   onGestureEnd?: () => void;
+  onSceneReady?: () => void;
 }
 
 function LoadingFallback() {
@@ -202,16 +203,31 @@ function SceneContent({
   onLipSyncReady,
   onControllerReady,
   onGestureEnd,
+  onSceneReady,
 }: PetSceneProps) {
   const [error, setError] = useState<string | null>(null);
   const [model, setModel] = useState<THREE.Group | null>(null);
   const [floorObj, setFloorObj] = useState<THREE.Object3D | null>(null);
   const [groundY, setGroundY] = useState<number | undefined>(undefined);
+  const [characterReady, setCharacterReady] = useState(false);
+  const [floorReady, setFloorReady] = useState(false);
   const floor = useMemo(() => getFloorConfig(floorFile), [floorFile]);
   const character = useMemo(
     () => getCharacterConfig(fileNameFromUrl(characterUrl)),
     [characterUrl]
   );
+
+  useEffect(() => {
+    setCharacterReady(false);
+  }, [characterUrl]);
+
+  useEffect(() => {
+    setFloorReady(false);
+  }, [floor.url]);
+
+  useEffect(() => {
+    if (characterReady && floorReady) onSceneReady?.();
+  }, [characterReady, floorReady, onSceneReady]);
 
   // Bắn tia thẳng đứng xuống mặt sàn tại (x,z) của nhân vật để lấy cao độ mặt
   // cát thật — bãi biển không phẳng nên không thể dùng 1 mốc GROUND_Y cố định
@@ -248,19 +264,29 @@ function SceneContent({
           lipSyncManager={null}
           isSpeaking={isSpeaking}
           onLoaded={(controller, lipSync) => {
+            setCharacterReady(true);
             onControllerReady?.(controller);
             onLipSyncReady?.(lipSync);
           }}
           onModelReady={setModel}
           onGestureEnd={onGestureEnd}
-          onError={setError}
+          onError={(message) => {
+            setError(message);
+            onSceneReady?.();
+          }}
           groundY={groundY}
         />
       </Suspense>
 
       {/* Mặt sàn 3D quanh nhân vật. */}
       <Suspense fallback={null} key={floor.url}>
-        <SceneFloor floor={floor} onReady={setFloorObj} />
+        <SceneFloor
+          floor={floor}
+          onReady={(obj) => {
+            setFloorObj(obj);
+            setFloorReady(true);
+          }}
+        />
       </Suspense>
 
       <ContactShadows position={[0, -1, 0]} opacity={0.4} scale={8} blur={2} />
