@@ -29,7 +29,6 @@ import {
   CartoonSection,
   CartoonStack,
 } from '@/components/cartoon';
-import { List, ListItem } from '@/components/ui/List';
 import { AppIcon } from '@/components/ui/AppIcon';
 import { cartoonTypography, cartoonInk } from '@/styles/cartoon-tokens';
 import { cn } from '@/lib/utils';
@@ -91,9 +90,6 @@ export default function SettingsPage() {
               <AppIcon name="settings" className="h-8 w-8" />
               Admin Settings
             </h1>
-            <p className={cn(cartoonTypography.body, cartoonInk, 'opacity-70 mt-2')}>
-              Cấu hình STT & TTS cho toàn bộ ứng dụng
-            </p>
           </div>
           <Link href="/">
             <CartoonIconButton variant="green" ariaLabel="Về app">
@@ -142,11 +138,6 @@ export default function SettingsPage() {
                   )}
                 </div>
               </div>
-              <p className={cn(cartoonTypography.caption, 'text-white/70 mt-4')}>
-                {hasChanges
-                  ? 'Nhấn "Lưu cấu hình Voice" để áp dụng cho toàn app'
-                  : `Cập nhật lần cuối: ${new Date(config.updatedAt).toLocaleString('vi-VN')}`}
-              </p>
             </CartoonCard>
 
             <CartoonSection>
@@ -154,9 +145,6 @@ export default function SettingsPage() {
                 <AppIcon name="stt" className="h-5 w-5" />
                 STT Provider
               </h2>
-              <p className={cn(cartoonTypography.body, cartoonInk, 'opacity-70')}>
-                Speech-to-Text — nhận diện giọng nói bé
-              </p>
               <CartoonStack align="stretch">
                 {STT_PROVIDER_OPTIONS.map((option) => (
                   <ProviderCard
@@ -164,7 +152,6 @@ export default function SettingsPage() {
                     option={option}
                     isSelected={activeStt === option.id}
                     onSelect={() => setSelectedStt(option.id)}
-                    freeBadge={option.id === 'web-speech'}
                   />
                 ))}
               </CartoonStack>
@@ -175,9 +162,6 @@ export default function SettingsPage() {
                 <AppIcon name="tts" className="h-5 w-5" />
                 TTS Provider
               </h2>
-              <p className={cn(cartoonTypography.body, cartoonInk, 'opacity-70')}>
-                Text-to-Speech — giọng nói AI BOT trả lời
-              </p>
               <CartoonStack align="stretch">
                 {TTS_PROVIDER_OPTIONS.map((option) => (
                   <ProviderCard
@@ -185,7 +169,6 @@ export default function SettingsPage() {
                     option={option}
                     isSelected={activeTts === option.id}
                     onSelect={() => setSelectedTts(option.id)}
-                    freeBadge={option.id === 'web-speech'}
                   />
                 ))}
               </CartoonStack>
@@ -196,10 +179,6 @@ export default function SettingsPage() {
                     <AppIcon name="drama" className="h-5 w-5" />
                     Giọng nhân vật ElevenLabs
                   </h2>
-                  <p className={cn(cartoonTypography.body, cartoonInk, 'opacity-70')}>
-                    Chọn giọng tiếng Việt cho AI BOT — 5 giọng nữ và 5 giọng nam
-                  </p>
-
                   <h3 className={cn(cartoonTypography.body, cartoonInk, 'font-semibold mt-4 inline-flex items-center gap-2')}>
                     <AppIcon name="female" className="h-4 w-4" />
                     Giọng nữ
@@ -230,10 +209,6 @@ export default function SettingsPage() {
                     ))}
                   </CartoonStack>
 
-                  <p className={cn(cartoonTypography.caption, cartoonInk, 'opacity-60 mt-4')}>
-                    Giọng thư viện ElevenLabs cần gói trả phí. Nếu không dùng được, app tự fallback
-                    sang giọng miễn phí.
-                  </p>
                 </>
               )}
             </CartoonSection>
@@ -279,13 +254,6 @@ export default function SettingsPage() {
               </CartoonStack>
             </CartoonCard>
 
-            <List className={cn(cartoonTypography.caption, cartoonInk, 'opacity-70')}>
-              <ListItem>• Web Speech STT/TTS: không cần biến môi trường</ListItem>
-              <ListItem>• LLM: LLM_API_URL, LLM_API_KEY, LLM_MODEL</ListItem>
-              <ListItem>• OpenAI STT/TTS: cần OPENAI_API_KEY (nếu dùng)</ListItem>
-              <ListItem>• ElevenLabs STT/TTS: cần ELEVENLABS_API_KEY</ListItem>
-              <ListItem>• Bảo vệ trang admin: ADMIN_SETTINGS_PIN</ListItem>
-            </List>
           </CartoonSection>
         )}
       </main>
