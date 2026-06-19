@@ -31,6 +31,7 @@ export {
 } from './Select';
 export { Table, TableHeader, TableBody, TableFooter, TableHead, TableRow, TableCell, TableCaption } from './Table';
 export { Textarea } from './Textarea';
+export { AppIcon, ICONS, type IconName } from './AppIcon';
 
 export { default as KidButton } from './KidButton';
 export { default as KidIconButton } from './KidIconButton';

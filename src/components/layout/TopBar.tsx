@@ -7,6 +7,7 @@ import {
   CartoonIconButton,
   CartoonSection,
 } from '@/components/cartoon';
+import { AppIcon } from '@/components/ui/AppIcon';
 import { cartoonSpacing } from '@/styles/cartoon-tokens';
 import { cn } from '@/lib/utils';
 
@@ -29,11 +30,11 @@ export default function TopBar() {
               ariaLabel="Cài đặt trẻ em"
               onClick={() => setSettingsOpen(true)}
             >
-              🎨
+              <AppIcon name="palette" className="h-6 w-6" />
             </CartoonIconButton>
             <Link href="/settings" className="inline-flex">
               <CartoonIconButton variant="pink" ariaLabel="Admin settings">
-                ⚙️
+                <AppIcon name="settings" className="h-6 w-6" />
               </CartoonIconButton>
             </Link>
           </div>

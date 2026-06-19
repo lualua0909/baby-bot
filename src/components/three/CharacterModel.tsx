@@ -42,6 +42,12 @@ interface CharacterModelProps {
   onModelReady?: (group: THREE.Group) => void;
   onGestureEnd?: () => void;
   onError?: (error: string) => void;
+  /**
+   * Cao độ mặt sàn thật tại (x,z) của nhân vật (raycast từ PetScene). Dùng cho
+   * position.y để chân đứng đúng trên mặt cát dù bãi biển không phẳng; chưa đo
+   * được thì rơi về config.position[1] (GROUND_Y).
+   */
+  groundY?: number;
 }
 
 export function CharacterModel({
@@ -53,6 +59,7 @@ export function CharacterModel({
   onModelReady,
   onGestureEnd,
   onError,
+  groundY,
 }: CharacterModelProps) {
   const groupRef = useRef<THREE.Group>(null);
   const controllerRef = useRef<AnimationController | null>(null);
@@ -84,6 +91,28 @@ export function CharacterModel({
     });
     return clone;
   }, [scene]);
+
+  // Cao độ ĐÁY (min.y) của model ở BIND POSE, tính từ boundingBox geometry từng
+  // mesh (ổn định với cả skinned mesh — xem boundingBoxForFraming ở PetScene).
+  // Mỗi model có pivot khác nhau: char-1 chân nằm ngay gốc (≈0) nên đặt thẳng là
+  // chạm sàn, còn char-2/3 pivot nằm TRÊN chân (đáy < 0) nên không bù sẽ chìm
+  // xuống dưới mặt sàn. Dời primitive lên -bottom để chân về đúng gốc group
+  // (local y = 0), nhờ vậy group ở GROUND_Y là chân chạm sàn và scale "mọc lên"
+  // vẫn nảy từ chân.
+  const footOffset = useMemo(() => {
+    const box = new THREE.Box3();
+    const tmp = new THREE.Box3();
+    clonedScene.updateWorldMatrix(true, true);
+    clonedScene.traverse((child) => {
+      const mesh = child as THREE.Mesh;
+      if (!mesh.isMesh) return;
+      if (!mesh.geometry.boundingBox) mesh.geometry.computeBoundingBox();
+      if (!mesh.geometry.boundingBox) return;
+      tmp.copy(mesh.geometry.boundingBox).applyMatrix4(mesh.matrixWorld);
+      box.union(tmp);
+    });
+    return box.isEmpty() ? 0 : -box.min.y;
+  }, [clonedScene]);
 
   // Khởi động hiệu ứng "mọc lên" mỗi khi ĐỔI sang nhân vật mới (bỏ qua lần mount
   // đầu — xem firstMountRef). useLayoutEffect để đặt scale=0/opacity=0 NGAY sau
@@ -192,11 +221,11 @@ export function CharacterModel({
     // xoay group là xoay toàn bộ nhân vật đồng bộ.
     <group
       ref={groupRef}
-      position={config.position}
+      position={[config.position[0], groundY ?? config.position[1], config.position[2]]}
       rotation={[0, config.rotationY, 0]}
       scale={config.scale}
     >
-      <primitive object={clonedScene} />
+      <primitive object={clonedScene} position={[0, footOffset, 0]} />
     </group>
   );
 }

@@ -2,22 +2,23 @@
 
 import type { AppMode } from '@/types/ai';
 import { CartoonButton } from '@/components/cartoon';
+import { AppIcon, type IconName } from '@/components/ui/AppIcon';
 import { useAppStore } from '@/store/appStore';
 import { cartoonTypography, cartoonInk, cartoonNavGlassBar } from '@/styles/cartoon-tokens';
 import { cn } from '@/lib/utils';
 
 interface MenuItem {
   mode: AppMode;
-  emoji: string;
+  icon: IconName;
   label: string;
 }
 
 const MENU_ITEMS: MenuItem[] = [
-  { mode: 'voice', emoji: '🎤', label: 'Trò chuyện' },
-  { mode: 'story', emoji: '📖', label: 'Kể chuyện' },
-  { mode: 'english', emoji: '🇬🇧', label: 'Tiếng Anh' },
-  { mode: 'singing', emoji: '🎵', label: 'Hát' },
-  { mode: 'game', emoji: '🎮', label: 'Trò chơi' },
+  { mode: 'voice', icon: 'mic', label: 'Trò chuyện' },
+  { mode: 'story', icon: 'book', label: 'Kể chuyện' },
+  { mode: 'english', icon: 'english', label: 'Tiếng Anh' },
+  { mode: 'singing', icon: 'music', label: 'Hát' },
+  { mode: 'game', icon: 'game', label: 'Trò chơi' },
 ];
 
 export default function BottomMenu({ isListening = false }: { isListening?: boolean }) {
@@ -45,7 +46,7 @@ export default function BottomMenu({ isListening = false }: { isListening?: bool
                 className="w-[15vw] h-[15vw] max-w-[4.75rem] max-h-[4.75rem] !min-w-0 !min-h-0 text-3xl sm:text-4xl"
                 onClick={() => setAppMode(active ? 'home' : item.mode)}
               >
-                {item.emoji}
+                <AppIcon name={item.icon} className="h-7 w-7 sm:h-8 sm:w-8" />
               </CartoonButton>
               <span
                 className={cn(

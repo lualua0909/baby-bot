@@ -1,3 +1,5 @@
+import type { IconName } from '@/components/ui/AppIcon';
+
 /**
  * Cấu hình sân khấu 3D — TÁCH RIÊNG thông số của MẶT SÀN và CHARACTER để khi
  * thay sàn mới hoặc nhân vật mới (rồi mix với nhau) không bị lệch/cụt/lỗi xoay.
@@ -34,9 +36,38 @@ export const FLOOR_CONFIGS: Record<string, FloorConfig> = {
     footprint: 18,
     rotationY: 0,
   },
+  'Desert.glb': {
+    url: '/Desert.glb',
+    footprint: 18,
+    rotationY: 0,
+  },
+  'Shop.glb': {
+    url: '/Shop.glb',
+    footprint: 18,
+    rotationY: 0,
+  },
+};
+
+export const FLOOR_OPTIONS = Object.keys(FLOOR_CONFIGS);
+
+export const FLOOR_LABELS: Record<string, string> = {
+  'Beach.glb': 'Bãi biển',
+  'Desert.glb': 'Sa mạc',
+  'Shop.glb': 'Cửa hàng',
+};
+
+export const FLOOR_ICONS: Record<string, IconName> = {
+  'Beach.glb': 'beach',
+  'Desert.glb': 'desert',
+  'Shop.glb': 'shop',
 };
 
 export const DEFAULT_FLOOR: FloorConfig = FLOOR_CONFIGS['Beach.glb'];
+
+/** Lấy config mặt sàn theo tên file, fallback về default nếu chưa khai báo. */
+export function getFloorConfig(file: string): FloorConfig {
+  return FLOOR_CONFIGS[file] ?? DEFAULT_FLOOR;
+}
 
 /**
  * Chiều cao hiển thị mục tiêu (world units) sau khi scale — mọi nhân vật canh

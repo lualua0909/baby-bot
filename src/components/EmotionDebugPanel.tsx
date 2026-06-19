@@ -2,32 +2,10 @@
 
 import { useState } from 'react';
 import { motion } from 'framer-motion';
+import { ChevronDown, ChevronUp } from 'lucide-react';
 import { Emotion, ALL_EMOTIONS, EMOTION_CONFIGS } from '@/lib/emotionEngine';
-
-const EMOTION_ICONS: Record<Emotion, string> = {
-  neutral: '😐',
-  blink_high: '😑',
-  happy: '😊',
-  glee: '🤩',
-  blink_low: '😌',
-  sad_down: '😞',
-  sad_up: '🥺',
-  worried: '😟',
-  focused: '🧐',
-  annoyed: '😒',
-  surprised: '😲',
-  skeptic: '🤨',
-  frustrated: '😤',
-  unimpressed: '😑',
-  sleepy: '😴',
-  suspicious: '🫣',
-  squint: '😑',
-  angry: '😠',
-  furious: '🤬',
-  scared: '😨',
-  awe: '😯',
-  sleeping: '💤',
-};
+import { AppIcon } from '@/components/ui/AppIcon';
+import { EMOTION_ICON_NAMES } from '@/lib/emotionIcons';
 
 const COLOR_PRESETS = [
   { label: 'Cyan', eye: '#00e5ff', glow: '#00e5ff' },
@@ -57,7 +35,6 @@ export default function EmotionDebugPanel({
 
   return (
     <div className="space-y-2">
-      {/* Emotions Grid */}
       <div className="glass pixel-border rounded-lg p-3">
         <div className="text-[7px] font-pixel text-white/30 tracking-wider uppercase mb-2 text-center">
           Debug: 22 Emotions
@@ -83,7 +60,11 @@ export default function EmotionDebugPanel({
                 }}
                 title={config.label}
               >
-                <span className="text-base leading-none">{EMOTION_ICONS[em]}</span>
+                <AppIcon
+                  name={EMOTION_ICON_NAMES[em]}
+                  className="h-4 w-4"
+                  style={{ color: isActive ? config.eyeColor : 'rgba(255,255,255,0.5)' }}
+                />
                 <span
                   className="text-[5px] font-pixel tracking-wider uppercase leading-tight text-center"
                   style={{ color: isActive ? config.eyeColor : 'rgba(255,255,255,0.25)' }}
@@ -104,17 +85,25 @@ export default function EmotionDebugPanel({
         </div>
       </div>
 
-      {/* Color Toggle Button */}
       {onSetColor && (
         <button
-          onClick={() => setShowColorPanel(p => !p)}
-          className="w-full text-[7px] font-pixel text-white/30 hover:text-white/50 tracking-wider uppercase text-center py-1 border border-white/5 rounded-md hover:border-white/10 transition-all"
+          onClick={() => setShowColorPanel((p) => !p)}
+          className="w-full text-[7px] font-pixel text-white/30 hover:text-white/50 tracking-wider uppercase text-center py-1 border border-white/5 rounded-md hover:border-white/10 transition-all inline-flex items-center justify-center gap-1"
         >
-          {showColorPanel ? '▲ Hide Colors' : '▼ Eye Color'}
+          {showColorPanel ? (
+            <>
+              <ChevronUp className="h-3 w-3" />
+              Hide Colors
+            </>
+          ) : (
+            <>
+              <ChevronDown className="h-3 w-3" />
+              Eye Color
+            </>
+          )}
         </button>
       )}
 
-      {/* Color Picker Panel */}
       {onSetColor && showColorPanel && (
         <motion.div
           initial={{ opacity: 0, height: 0 }}
@@ -125,7 +114,6 @@ export default function EmotionDebugPanel({
             Eye Color
           </div>
 
-          {/* Preset colors */}
           <div className="flex flex-wrap justify-center gap-2 mb-3">
             {COLOR_PRESETS.map((preset) => {
               const isActive = currentColor === preset.eye;
@@ -147,7 +135,6 @@ export default function EmotionDebugPanel({
             })}
           </div>
 
-          {/* Custom color picker */}
           <div className="flex items-center justify-center gap-2">
             <span className="text-[6px] font-pixel text-white/30 uppercase">Custom:</span>
             <input

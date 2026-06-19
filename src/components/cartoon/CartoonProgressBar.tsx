@@ -2,6 +2,7 @@
 
 import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
+import { AppIcon, type IconName } from '@/components/ui/AppIcon';
 import {
   cartoonBorder,
   cartoonMotion,
@@ -9,7 +10,6 @@ import {
   cartoonRadius,
   cartoonShadow,
   cartoonSpacing,
-  cartoonTypography,
   cartoonVariantBorder,
   type CartoonVariant,
 } from '@/styles/cartoon-tokens';
@@ -17,7 +17,7 @@ import {
 export interface CartoonProgressBarProps {
   value: number;
   max?: number;
-  icon?: string;
+  icon?: IconName;
   className?: string;
   variant?: CartoonVariant;
 }
@@ -25,7 +25,7 @@ export interface CartoonProgressBarProps {
 export function CartoonProgressBar({
   value,
   max = 100,
-  icon = '❤️',
+  icon = 'heart',
   className,
   variant = 'pink',
 }: CartoonProgressBarProps) {
@@ -35,7 +35,7 @@ export function CartoonProgressBar({
     <div className={cn(cartoonSpacing.row, className)}>
       <div
         className={cn(
-          'flex h-14 w-16 shrink-0 items-center justify-center text-2xl',
+          'flex h-14 w-16 shrink-0 items-center justify-center',
           cartoonRadius.badge,
           cartoonBorder.base,
           cartoonVariantBorder[variant],
@@ -43,7 +43,7 @@ export function CartoonProgressBar({
           cartoonShadow.floating
         )}
       >
-        {icon}
+        <AppIcon name={icon} className="h-7 w-7 text-pink-500" />
       </div>
       <div
         className={cn(

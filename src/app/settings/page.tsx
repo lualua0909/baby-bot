@@ -30,6 +30,7 @@ import {
   CartoonStack,
 } from '@/components/cartoon';
 import { List, ListItem } from '@/components/ui/List';
+import { AppIcon } from '@/components/ui/AppIcon';
 import { cartoonTypography, cartoonInk } from '@/styles/cartoon-tokens';
 import { cn } from '@/lib/utils';
 
@@ -86,14 +87,17 @@ export default function SettingsPage() {
       <header>
         <CartoonRow className="max-w-3xl mx-auto justify-between">
           <div>
-            <h1 className={cn(cartoonTypography.heading, cartoonInk)}>⚙️ Admin Settings</h1>
+            <h1 className={cn(cartoonTypography.heading, cartoonInk, 'inline-flex items-center gap-3')}>
+              <AppIcon name="settings" className="h-8 w-8" />
+              Admin Settings
+            </h1>
             <p className={cn(cartoonTypography.body, cartoonInk, 'opacity-70 mt-2')}>
               Cấu hình STT & TTS cho toàn bộ ứng dụng
             </p>
           </div>
           <Link href="/">
             <CartoonIconButton variant="green" ariaLabel="Về app">
-              🏠
+              <AppIcon name="home" className="h-6 w-6" />
             </CartoonIconButton>
           </Link>
         </CartoonRow>
@@ -101,8 +105,9 @@ export default function SettingsPage() {
 
       <main className="max-w-3xl mx-auto">
         {loading && (
-          <p className={cn(cartoonTypography.body, cartoonInk, 'text-center py-12 animate-pulse')}>
-            Đang tải cấu hình... ⏳
+          <p className={cn(cartoonTypography.body, cartoonInk, 'text-center py-12 animate-pulse inline-flex items-center justify-center gap-2 w-full')}>
+            <AppIcon name="loader" className="h-5 w-5 animate-spin" />
+            Đang tải cấu hình...
           </p>
         )}
 
@@ -145,7 +150,10 @@ export default function SettingsPage() {
             </CartoonCard>
 
             <CartoonSection>
-              <h2 className={cn(cartoonTypography.subheading, cartoonInk)}>🎤 STT Provider</h2>
+              <h2 className={cn(cartoonTypography.subheading, cartoonInk, 'inline-flex items-center gap-2')}>
+                <AppIcon name="stt" className="h-5 w-5" />
+                STT Provider
+              </h2>
               <p className={cn(cartoonTypography.body, cartoonInk, 'opacity-70')}>
                 Speech-to-Text — nhận diện giọng nói bé
               </p>
@@ -163,7 +171,10 @@ export default function SettingsPage() {
             </CartoonSection>
 
             <CartoonSection>
-              <h2 className={cn(cartoonTypography.subheading, cartoonInk)}>🔊 TTS Provider</h2>
+              <h2 className={cn(cartoonTypography.subheading, cartoonInk, 'inline-flex items-center gap-2')}>
+                <AppIcon name="tts" className="h-5 w-5" />
+                TTS Provider
+              </h2>
               <p className={cn(cartoonTypography.body, cartoonInk, 'opacity-70')}>
                 Text-to-Speech — giọng nói bạn thú trả lời
               </p>
@@ -181,15 +192,17 @@ export default function SettingsPage() {
 
               {activeTts === 'elevenlabs' && (
                 <>
-                  <h2 className={cn(cartoonTypography.subheading, cartoonInk, 'mt-8')}>
-                    🎭 Giọng nhân vật ElevenLabs
+                  <h2 className={cn(cartoonTypography.subheading, cartoonInk, 'mt-8 inline-flex items-center gap-2')}>
+                    <AppIcon name="drama" className="h-5 w-5" />
+                    Giọng nhân vật ElevenLabs
                   </h2>
                   <p className={cn(cartoonTypography.body, cartoonInk, 'opacity-70')}>
                     Chọn giọng tiếng Việt cho bạn thú — 5 giọng nữ và 5 giọng nam
                   </p>
 
-                  <h3 className={cn(cartoonTypography.body, cartoonInk, 'font-semibold mt-4')}>
-                    👧 Giọng nữ
+                  <h3 className={cn(cartoonTypography.body, cartoonInk, 'font-semibold mt-4 inline-flex items-center gap-2')}>
+                    <AppIcon name="female" className="h-4 w-4" />
+                    Giọng nữ
                   </h3>
                   <CartoonStack align="stretch">
                     {ELEVENLABS_VI_FEMALE_VOICES.map((voice) => (
@@ -202,8 +215,9 @@ export default function SettingsPage() {
                     ))}
                   </CartoonStack>
 
-                  <h3 className={cn(cartoonTypography.body, cartoonInk, 'font-semibold mt-6')}>
-                    👦 Giọng nam
+                  <h3 className={cn(cartoonTypography.body, cartoonInk, 'font-semibold mt-6 inline-flex items-center gap-2')}>
+                    <AppIcon name="male" className="h-4 w-4" />
+                    Giọng nam
                   </h3>
                   <CartoonStack align="stretch">
                     {ELEVENLABS_VI_MALE_VOICES.map((voice) => (
@@ -225,7 +239,10 @@ export default function SettingsPage() {
             </CartoonSection>
 
             <CartoonCard variant="pink">
-              <h2 className={cn(cartoonTypography.subheading, 'text-white mb-6')}>💾 Lưu cấu hình</h2>
+              <h2 className={cn(cartoonTypography.subheading, 'text-white mb-6 inline-flex items-center gap-2')}>
+                <AppIcon name="save" className="h-5 w-5" />
+                Lưu cấu hình
+              </h2>
               <CartoonStack align="stretch">
                 <div className="flex flex-col gap-6">
                   <Label htmlFor="admin-pin" className="text-white">
@@ -241,7 +258,17 @@ export default function SettingsPage() {
                 )}
 
                 <Button type="button" onClick={() => void handleSave()} disabled={saving || !hasChanges} className="w-full" size="lg">
-                  {saving ? 'Đang lưu...' : '💾 Lưu cấu hình Voice'}
+                  {saving ? (
+                    <span className="inline-flex items-center gap-2">
+                      <AppIcon name="loader" className="h-4 w-4 animate-spin" />
+                      Đang lưu...
+                    </span>
+                  ) : (
+                    <span className="inline-flex items-center gap-2">
+                      <AppIcon name="save" className="h-4 w-4" />
+                      Lưu cấu hình Voice
+                    </span>
+                  )}
                 </Button>
 
                 {!hasChanges && (

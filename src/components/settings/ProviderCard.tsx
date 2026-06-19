@@ -3,6 +3,7 @@
 import type { ProviderOption } from '@/types/admin';
 import { Badge } from '@/components/ui/Badge';
 import { List, ListItem } from '@/components/ui/List';
+import { AppIcon } from '@/components/ui/AppIcon';
 import { CartoonCard } from '@/components/cartoon';
 import { cartoonTypography } from '@/styles/cartoon-tokens';
 import { cn } from '@/lib/utils';
@@ -44,7 +45,10 @@ export default function ProviderCard<T extends string>({
           <p className={cn(cartoonTypography.body, 'text-green-600 mb-2')}>Ưu điểm</p>
           <List className={cn(cartoonTypography.caption, isSelected ? 'text-white/80' : 'text-[#4a6a7d]/70')}>
             {option.pros.map((p) => (
-              <ListItem key={p}>✓ {p}</ListItem>
+              <ListItem key={p} className="inline-flex items-start gap-1.5">
+                <AppIcon name="check" className="h-3.5 w-3.5 mt-0.5 shrink-0 text-green-600" />
+                {p}
+              </ListItem>
             ))}
           </List>
         </div>
@@ -52,14 +56,20 @@ export default function ProviderCard<T extends string>({
           <p className={cn(cartoonTypography.body, 'text-pink-600 mb-2')}>Nhược điểm</p>
           <List className={cn(cartoonTypography.caption, isSelected ? 'text-white/80' : 'text-[#4a6a7d]/70')}>
             {option.cons.map((c) => (
-              <ListItem key={c}>✗ {c}</ListItem>
+              <ListItem key={c} className="inline-flex items-start gap-1.5">
+                <AppIcon name="cross" className="h-3.5 w-3.5 mt-0.5 shrink-0 text-pink-600" />
+                {c}
+              </ListItem>
             ))}
           </List>
         </div>
       </div>
 
       {isSelected && (
-        <p className={cn(cartoonTypography.body, 'text-white mt-6')}>⭐ Đã chọn!</p>
+        <p className={cn(cartoonTypography.body, 'text-white mt-6 inline-flex items-center gap-2')}>
+          <AppIcon name="star" className="h-4 w-4 text-yellow-300" />
+          Đã chọn!
+        </p>
       )}
     </CartoonCard>
   );

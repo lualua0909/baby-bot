@@ -8,12 +8,13 @@ import {
   CartoonGrid,
   CartoonStack,
 } from '@/components/cartoon';
+import { AppIcon, type IconName } from '@/components/ui/AppIcon';
 
-const ANIMALS = [
-  { emoji: '🐱', name: 'cat', vi: 'mèo' },
-  { emoji: '🐶', name: 'dog', vi: 'chó' },
-  { emoji: '🦁', name: 'lion', vi: 'sư tử' },
-  { emoji: '🐸', name: 'frog', vi: 'ếch' },
+const ANIMALS: { icon: IconName; name: string; vi: string }[] = [
+  { icon: 'cat', name: 'cat', vi: 'mèo' },
+  { icon: 'dog', name: 'dog', vi: 'chó' },
+  { icon: 'lion', name: 'lion', vi: 'sư tử' },
+  { icon: 'frog', name: 'frog', vi: 'ếch' },
 ];
 
 interface GuessAnimalGameProps {
@@ -53,7 +54,7 @@ export default function GuessAnimalGame({ speakText, onComplete }: GuessAnimalGa
 
   return (
     <CartoonStack>
-      <span className="text-7xl animate-bounce">{target.emoji}</span>
+      <AppIcon name={target.icon} className="h-16 w-16 animate-bounce text-white" />
       <CartoonGrid cols={2}>
         {ANIMALS.map((a) => (
           <CartoonButton
@@ -63,7 +64,7 @@ export default function GuessAnimalGame({ speakText, onComplete }: GuessAnimalGa
             onClick={() => handleGuess(a)}
             disabled={answered}
           >
-            {a.emoji}
+            <AppIcon name={a.icon} className="h-8 w-8" />
           </CartoonButton>
         ))}
       </CartoonGrid>

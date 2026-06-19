@@ -1,6 +1,7 @@
 'use client';
 
 import { CartoonButton } from '@/components/cartoon/CartoonButton';
+import { AppIcon } from '@/components/ui/AppIcon';
 
 export interface CartoonVoiceButtonProps {
   isListening: boolean;
@@ -17,7 +18,7 @@ export function CartoonVoiceButton({ isListening, onToggle }: CartoonVoiceButton
       onClick={onToggle}
       aria-label={isListening ? 'Dừng nghe' : 'Bắt đầu nói'}
     >
-      {isListening ? '⏹️' : '🎤'}
+      <AppIcon name={isListening ? 'stop' : 'mic'} className="h-7 w-7" />
     </CartoonButton>
   );
 }

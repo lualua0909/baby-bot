@@ -21,6 +21,7 @@ import { useAppStore } from '@/store/appStore';
 import { LipSyncManager } from '@/lib/lipSync/LipSyncManager';
 import type { GameType, StoryTheme } from '@/types/ai';
 import { CartoonDialog } from '@/components/cartoon';
+import { AppIcon } from '@/components/ui/AppIcon';
 import { cartoonBackground } from '@/styles/cartoon-tokens';
 import { cn } from '@/lib/utils';
 import EmotionBar from '@/components/ui/EmotionBar';
@@ -138,7 +139,16 @@ export default function AppShell() {
         onSelect={handleGameSelect}
       />
 
-      <CartoonDialog open={activeGame !== null} onClose={handleGameComplete} title="🎮 Trò chơi">
+      <CartoonDialog
+        open={activeGame !== null}
+        onClose={handleGameComplete}
+        title={
+          <span className="inline-flex items-center gap-2">
+            <AppIcon name="game" className="h-6 w-6" />
+            Trò chơi
+          </span>
+        }
+      >
         {activeGame === 'guess-animal' && (
           <GuessAnimalGame speakText={speakText} onComplete={handleGameComplete} />
         )}

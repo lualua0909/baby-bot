@@ -3,6 +3,7 @@
 import { AnimatePresence, motion } from 'framer-motion';
 import { type ReactNode } from 'react';
 import { cn } from '@/lib/utils';
+import { AppIcon, type IconName } from '@/components/ui/AppIcon';
 import { CartoonButton } from '@/components/cartoon/CartoonButton';
 import {
   cartoonDialogBase,
@@ -16,14 +17,14 @@ export interface CartoonRewardPopupProps {
   open: boolean;
   onClose: () => void;
   title: string;
-  reward?: string;
+  reward?: IconName;
   children?: ReactNode;
 }
 
 function Sparkle({ delay }: { delay: number }) {
   return (
     <motion.span
-      className="absolute text-2xl pointer-events-none"
+      className="absolute pointer-events-none"
       initial={{ scale: 0, opacity: 0 }}
       animate={{ scale: [0, 1.2, 0], opacity: [0, 1, 0], rotate: [0, 180] }}
       transition={{ duration: 1.2, delay, repeat: Infinity, repeatDelay: 0.8 }}
@@ -32,7 +33,7 @@ function Sparkle({ delay }: { delay: number }) {
         left: `${10 + delay * 20}%`,
       }}
     >
-      ✨
+      <AppIcon name="sparkles" className="h-6 w-6 text-yellow-300" />
     </motion.span>
   );
 }
@@ -41,7 +42,7 @@ export function CartoonRewardPopup({
   open,
   onClose,
   title,
-  reward = '🎁',
+  reward = 'gift',
   children,
 }: CartoonRewardPopupProps) {
   return (
@@ -70,9 +71,9 @@ export function CartoonRewardPopup({
             <motion.div
               animate={cartoonMotion.coinFloat}
               transition={cartoonMotion.coinTransition}
-              className="text-7xl mb-6"
+              className="mb-6 flex justify-center"
             >
-              {reward}
+              <AppIcon name={reward} className="h-16 w-16 text-yellow-300" />
             </motion.div>
             <h2 className={cn(cartoonTypography.subheading, 'text-white mb-6')}>{title}</h2>
             {children}

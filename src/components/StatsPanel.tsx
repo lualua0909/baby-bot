@@ -1,22 +1,22 @@
 'use client';
 
 import { motion } from 'framer-motion';
+import { AppIcon, type IconName } from '@/components/ui/AppIcon';
 
 interface StatBarProps {
   label: string;
   value: number;
-  icon: string;
+  icon: IconName;
   color: string;
 }
 
 function StatBar({ label, value, icon, color }: StatBarProps) {
-  // Create pixel blocks for the stat bar
   const totalBlocks = 10;
   const filledBlocks = Math.round((value / 100) * totalBlocks);
 
   return (
     <div className="flex items-center gap-2 w-full">
-      <span className="text-base w-6 text-center" style={{ imageRendering: 'pixelated' }}>{icon}</span>
+      <AppIcon name={icon} className="h-5 w-5" style={{ color }} />
       <div className="flex-1">
         <div className="flex justify-between mb-1">
           <span className="text-[8px] font-pixel text-white/50 uppercase tracking-wider">{label}</span>
@@ -59,10 +59,10 @@ export default function StatsPanel({
 }) {
   return (
     <div className="glass pixel-border rounded-lg p-4 space-y-3">
-      <StatBar label="HNG" value={hunger} icon="🍙" color="#f59e0b" />
-      <StatBar label="JOY" value={happiness} icon="✨" color="#ec4899" />
-      <StatBar label="NRG" value={energy} icon="⚡" color="#8b5cf6" />
-      <StatBar label="LUV" value={affection} icon="💖" color="#ef4444" />
+      <StatBar label="HNG" value={hunger} icon="feed" color="#f59e0b" />
+      <StatBar label="JOY" value={happiness} icon="joy" color="#ec4899" />
+      <StatBar label="NRG" value={energy} icon="energy" color="#8b5cf6" />
+      <StatBar label="LUV" value={affection} icon="love" color="#ef4444" />
     </div>
   );
 }

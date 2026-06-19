@@ -7,6 +7,7 @@ import { AI_STATE_ANIMATION_MAP } from '@/lib/animation/animationMap';
 
 export interface AppSettings {
   characterFile: string;
+  floorFile: string;
   petName: string;
   soundEnabled: boolean;
 }
@@ -55,6 +56,7 @@ type AppStore = AppStoreState & AppStoreActions;
 
 const DEFAULT_SETTINGS: AppSettings = {
   characterFile: 'character-1.glb',
+  floorFile: 'Beach.glb',
   petName: 'Bé Tom',
   soundEnabled: true,
 };

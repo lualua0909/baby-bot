@@ -5,6 +5,7 @@ import { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useAppStore } from '@/store/appStore';
 import { CartoonChatBubble, CartoonRow } from '@/components/cartoon';
+import { AppIcon } from '@/components/ui/AppIcon';
 import { cartoonTypography } from '@/styles/cartoon-tokens';
 import { cn } from '@/lib/utils';
 
@@ -71,11 +72,11 @@ export default function AIStateBadge() {
                 <CartoonChatBubble variant="ai" tail="down" className="max-w-full w-full">
                   <CartoonRow className="pointer-events-none">
                     <motion.span
-                      className="text-2xl leading-none shrink-0"
+                      className="leading-none shrink-0"
                       animate={{ scale: [1, 1.15, 1] }}
                       transition={{ repeat: Infinity, duration: 0.7 }}
                     >
-                      💬
+                      <AppIcon name="message" className="h-6 w-6 text-white" />
                     </motion.span>
                     <span className={cn(cartoonTypography.body, 'text-left text-white')}>
                       {typed}

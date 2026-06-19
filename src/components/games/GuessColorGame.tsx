@@ -11,6 +11,7 @@ import {
 import type { CartoonVariant } from '@/styles/cartoon-tokens';
 import { cartoonTypography } from '@/styles/cartoon-tokens';
 import { cn } from '@/lib/utils';
+import { AppIcon } from '@/components/ui/AppIcon';
 
 const COLORS: { name: string; vi: string; variant: CartoonVariant }[] = [
   { name: 'red', vi: 'đỏ', variant: 'pink' },
@@ -52,7 +53,7 @@ export default function GuessColorGame({ speakText, onComplete }: GuessColorGame
   return (
     <CartoonStack>
       <CartoonCard variant={target.variant} className="!p-6 w-32 h-32 flex items-center justify-center">
-        <span className="text-4xl">🎨</span>
+        <AppIcon name="palette" className="h-10 w-10 text-white" />
       </CartoonCard>
       <CartoonGrid cols={2}>
         {COLORS.map((c) => (

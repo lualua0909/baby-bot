@@ -4,13 +4,14 @@ import dynamic from 'next/dynamic';
 import { useRef, useCallback } from 'react';
 import { useAppStore } from '@/store/appStore';
 import { LipSyncManager } from '@/lib/lipSync/LipSyncManager';
+import { AppIcon } from '@/components/ui/AppIcon';
 import type { AnimationController } from '@/lib/animation/AnimationController';
 
 const PetScene = dynamic(() => import('./PetScene'), {
   ssr: false,
   loading: () => (
     <div className="w-full h-full flex flex-col items-center justify-center gap-3">
-      <span className="text-5xl animate-bounce">🐾</span>
+      <AppIcon name="paw" className="h-12 w-12 animate-bounce text-white" />
       <div className="text-lg font-extrabold text-white drop-shadow-[0_2px_3px_rgba(0,0,0,0.4)] animate-pulse">Đang tải bạn thú...</div>
     </div>
   ),
@@ -23,6 +24,7 @@ interface PetCanvasProps {
 
 export default function PetCanvas({ isSpeaking, lipSyncRef }: PetCanvasProps) {
   const characterFile = useAppStore((s) => s.settings.characterFile);
+  const floorFile = useAppStore((s) => s.settings.floorFile);
   const currentAnimation = useAppStore((s) => s.overrideAnimation ?? s.currentAnimation);
   const restAfterGesture = useAppStore((s) => s.restAfterGesture);
   const setAvailableAnimations = useAppStore((s) => s.setAvailableAnimations);
@@ -43,6 +45,7 @@ export default function PetCanvas({ isSpeaking, lipSyncRef }: PetCanvasProps) {
     <div className="absolute inset-0">
       <PetScene
         characterUrl={characterUrl}
+        floorFile={floorFile}
         animation={currentAnimation}
         isSpeaking={isSpeaking}
         onLipSyncReady={handleLipSyncReady}

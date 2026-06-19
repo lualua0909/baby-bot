@@ -3,20 +3,21 @@
 import { useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Emotion, EMOTION_CONFIGS } from '@/lib/emotionEngine';
+import { AppIcon, type IconName } from '@/components/ui/AppIcon';
 
-const SHAPES: Record<string, string[]> = {
-  sparkle: ['✦', '✧', '⬥', '◆'],
-  rain: ['│', '╎', '┊', '╏'],
-  hearts: ['♥', '♡', '❤'],
-  zzz: ['z', 'Z', 'z'],
-  fire: ['▲', '△', '◢'],
-  stars: ['★', '☆', '✦', '⭐'],
+const PARTICLE_ICONS: Record<string, IconName[]> = {
+  sparkle: ['sparkles', 'star', 'sparkles', 'star'],
+  rain: ['cloud', 'cloud', 'cloud', 'cloud'],
+  hearts: ['heart', 'heart', 'heart'],
+  zzz: ['moon', 'moon', 'moon'],
+  fire: ['flame', 'flame', 'flame'],
+  stars: ['star', 'star', 'sparkles', 'star'],
   none: [],
 };
 
 interface Particle {
   id: number;
-  char: string;
+  icon: IconName;
   x: number;
   delay: number;
   duration: number;
@@ -27,8 +28,8 @@ export default function EmotionParticles({ emotion }: { emotion: Emotion }) {
   const config = EMOTION_CONFIGS[emotion];
 
   const particles = useMemo(() => {
-    const chars = SHAPES[config.particleType] || [];
-    if (chars.length === 0) return [];
+    const icons = PARTICLE_ICONS[config.particleType] || [];
+    if (icons.length === 0) return [];
 
     const result: Particle[] = [];
     const count = config.particleType === 'rain' ? 12 : 8;
@@ -36,7 +37,7 @@ export default function EmotionParticles({ emotion }: { emotion: Emotion }) {
     for (let i = 0; i < count; i++) {
       result.push({
         id: i,
-        char: chars[i % chars.length],
+        icon: icons[i % icons.length],
         x: 10 + Math.random() * 80,
         delay: Math.random() * 2,
         duration: 2 + Math.random() * 2,
@@ -55,12 +56,11 @@ export default function EmotionParticles({ emotion }: { emotion: Emotion }) {
         {particles.map((p) => (
           <motion.div
             key={`${emotion}-${p.id}`}
-            className="absolute font-mono select-none"
+            className="absolute select-none"
             style={{
               left: `${p.x}%`,
-              fontSize: p.size,
               color: config.particleColor,
-              textShadow: `0 0 8px ${config.particleColor}, 0 0 16px ${config.particleColor}44`,
+              filter: `drop-shadow(0 0 8px ${config.particleColor}) drop-shadow(0 0 16px ${config.particleColor}44)`,
             }}
             initial={{
               top: isRain ? '-5%' : isZzz ? '30%' : '90%',
@@ -79,7 +79,7 @@ export default function EmotionParticles({ emotion }: { emotion: Emotion }) {
               ease: 'linear',
             }}
           >
-            {p.char}
+            <AppIcon name={p.icon} style={{ width: p.size, height: p.size }} />
           </motion.div>
         ))}
       </AnimatePresence>

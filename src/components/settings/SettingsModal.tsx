@@ -19,6 +19,9 @@ import { getElevenLabsViVoice } from '@/lib/voice/elevenlabsViVoices';
 import { cartoonTypography } from '@/styles/cartoon-tokens';
 import { cn } from '@/lib/utils';
 
+import { FLOOR_LABELS, FLOOR_OPTIONS, FLOOR_ICONS } from '@/config/scene3d';
+import { AppIcon } from '@/components/ui/AppIcon';
+
 const CHARACTER_OPTIONS = ['character-1.glb', 'character-2.glb', 'character-3.glb'];
 
 export default function SettingsModal() {
@@ -38,7 +41,16 @@ export default function SettingsModal() {
       : TTS_PROVIDER_OPTIONS.find((o) => o.id === adminConfig?.ttsProvider)?.name ?? 'Đang tải...';
 
   return (
-    <KidModal open={isOpen} onClose={() => setSettingsOpen(false)} title="🎨 Cài đặt">
+    <KidModal
+      open={isOpen}
+      onClose={() => setSettingsOpen(false)}
+      title={
+        <span className="inline-flex items-center gap-2">
+          <AppIcon name="palette" className="h-6 w-6" />
+          Cài đặt
+        </span>
+      }
+    >
       <CartoonStack align="stretch">
         <div className="flex flex-col gap-6">
           <Label htmlFor="pet-name">Tên bạn thú</Label>
@@ -69,6 +81,28 @@ export default function SettingsModal() {
           </Select>
         </div>
 
+        <div className="flex flex-col gap-6">
+          <Label htmlFor="floor">Mặt sàn (GLB)</Label>
+          <Select
+            value={settings.floorFile ?? 'Beach.glb'}
+            onValueChange={(value) => updateSettings({ floorFile: value })}
+          >
+            <SelectTrigger id="floor">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {FLOOR_OPTIONS.map((f) => (
+                <SelectItem key={f} value={f}>
+                  <span className="inline-flex items-center gap-2">
+                    <AppIcon name={FLOOR_ICONS[f] ?? 'shop'} className="h-4 w-4" />
+                    {FLOOR_LABELS[f] ?? f}
+                  </span>
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
         <CartoonCard variant="blue">
           <span className={cn(cartoonTypography.caption, 'text-white/80')}>Nhận diện giọng (STT)</span>
           <span className={cn(cartoonTypography.subheading, 'text-white block')}>{sttLabel}</span>
@@ -93,8 +127,9 @@ export default function SettingsModal() {
               updateSettings({ soundEnabled: checked === true })
             }
           />
-          <Label htmlFor="sound-enabled" className="cursor-pointer">
-            Bật âm thanh 🔊
+          <Label htmlFor="sound-enabled" className="cursor-pointer inline-flex items-center gap-2">
+            Bật âm thanh
+            <AppIcon name="volume" className="h-4 w-4" />
           </Label>
         </div>
       </CartoonStack>

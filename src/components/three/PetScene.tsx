@@ -8,10 +8,16 @@ import { CharacterModel } from './CharacterModel';
 import { LipSyncManager } from '@/lib/lipSync/LipSyncManager';
 import type { AnimationController } from '@/lib/animation/AnimationController';
 import type { CharacterAnimation } from '@/types/animation';
-import { DEFAULT_FLOOR, GROUND_Y } from '@/config/scene3d';
+import { FLOOR_CONFIGS, GROUND_Y, getFloorConfig, getCharacterConfig, type FloorConfig } from '@/config/scene3d';
+
+/** Lấy tên file .glb từ URL phục vụ character (vd /api/character/character-1.glb). */
+function fileNameFromUrl(url: string): string {
+  return decodeURIComponent(url.split('/').pop() ?? '');
+}
 
 interface PetSceneProps {
   characterUrl: string;
+  floorFile: string;
   animation: CharacterAnimation;
   isSpeaking: boolean;
   onLipSyncReady?: (lipSync: LipSyncManager) => void;
@@ -33,8 +39,14 @@ function LoadingFallback() {
  * lệch), phóng to lấp đầy màn hình, và đặt bề mặt ngang mốc chân (GROUND_Y).
  * Thông số riêng của từng sàn lấy từ config (xem src/config/scene3d.ts).
  */
-function BeachFloor() {
-  const { scene } = useGLTF(DEFAULT_FLOOR.url);
+function SceneFloor({
+  floor,
+  onReady,
+}: {
+  floor: FloorConfig;
+  onReady?: (obj: THREE.Object3D) => void;
+}) {
+  const { scene } = useGLTF(floor.url);
 
   const cloned = useMemo(() => {
     const clone = scene.clone(true);
@@ -51,7 +63,7 @@ function BeachFloor() {
     const center = new THREE.Vector3();
     box.getSize(size);
     box.getCenter(center);
-    const s = DEFAULT_FLOOR.footprint / Math.max(size.x, size.z);
+    const s = floor.footprint / Math.max(size.x, size.z);
 
     // Dò cao độ MẶT CÁT: lấy y của vertex xa tâm nhất (mép bãi biển), tránh
     // canh nhầm theo ngọn cây dừa (điểm cao nhất của model).
@@ -77,16 +89,22 @@ function BeachFloor() {
       // Tâm về gốc trên trục X/Z; mặt cát canh về mốc chân (GROUND_Y).
       position: [-center.x * s, GROUND_Y - sandY * s, -center.z * s] as [number, number, number],
     };
-  }, [cloned]);
+  }, [cloned, floor]);
+
+  // Báo mesh sàn (đã gắn scale/position) ra ngoài để PetScene raycast tìm cao độ
+  // mặt cát. cloned đã là con của group xoay nên matrixWorld gồm đủ biến đổi.
+  useEffect(() => {
+    onReady?.(cloned);
+  }, [cloned, onReady]);
 
   return (
-    <group rotation={[0, DEFAULT_FLOOR.rotationY, 0]}>
+    <group rotation={[0, floor.rotationY, 0]}>
       <primitive object={cloned} scale={scale} position={position} />
     </group>
   );
 }
 
-useGLTF.preload(DEFAULT_FLOOR.url);
+Object.values(FLOOR_CONFIGS).forEach((config) => useGLTF.preload(config.url));
 
 /**
  * Bounding box dùng để frame camera. Gộp boundingBox của geometry từng mesh ở
@@ -178,6 +196,7 @@ function CameraFit({ target }: { target: THREE.Group | null }) {
 
 function SceneContent({
   characterUrl,
+  floorFile,
   animation,
   isSpeaking,
   onLipSyncReady,
@@ -186,6 +205,26 @@ function SceneContent({
 }: PetSceneProps) {
   const [error, setError] = useState<string | null>(null);
   const [model, setModel] = useState<THREE.Group | null>(null);
+  const [floorObj, setFloorObj] = useState<THREE.Object3D | null>(null);
+  const [groundY, setGroundY] = useState<number | undefined>(undefined);
+  const floor = useMemo(() => getFloorConfig(floorFile), [floorFile]);
+  const character = useMemo(
+    () => getCharacterConfig(fileNameFromUrl(characterUrl)),
+    [characterUrl]
+  );
+
+  // Bắn tia thẳng đứng xuống mặt sàn tại (x,z) của nhân vật để lấy cao độ mặt
+  // cát thật — bãi biển không phẳng nên không thể dùng 1 mốc GROUND_Y cố định
+  // cho mọi vị trí (chân sẽ lún/lửng). Tính lại khi đổi sàn hoặc đổi nhân vật.
+  useEffect(() => {
+    if (!floorObj) return;
+    const [x, , z] = character.position;
+    floorObj.updateWorldMatrix(true, true);
+    const ray = new THREE.Raycaster();
+    ray.set(new THREE.Vector3(x, 1000, z), new THREE.Vector3(0, -1, 0));
+    const hit = ray.intersectObject(floorObj, true)[0];
+    setGroundY(hit ? hit.point.y : undefined);
+  }, [floorObj, character]);
 
   if (error) {
     return (
@@ -215,12 +254,13 @@ function SceneContent({
           onModelReady={setModel}
           onGestureEnd={onGestureEnd}
           onError={setError}
+          groundY={groundY}
         />
       </Suspense>
 
-      {/* Bãi biển 3D làm mặt sàn quanh nhân vật. */}
-      <Suspense fallback={null}>
-        <BeachFloor />
+      {/* Mặt sàn 3D quanh nhân vật. */}
+      <Suspense fallback={null} key={floor.url}>
+        <SceneFloor floor={floor} onReady={setFloorObj} />
       </Suspense>
 
       <ContactShadows position={[0, -1, 0]} opacity={0.4} scale={8} blur={2} />
