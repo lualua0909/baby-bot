@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import type { AIState, AppMode, StoryTheme, GameType } from '@/types/ai';
 import type { CharacterAnimation } from '@/types/animation';
+import type { Emotion } from '@/lib/emotionEngine';
 import { ALL_ANIMATIONS } from '@/types/animation';
 import { AI_STATE_ANIMATION_MAP } from '@/lib/animation/animationMap';
 
@@ -28,6 +29,8 @@ interface AppStoreState {
   isMicActive: boolean;
   subtitle: string;
   lastResponse: string;
+  /** Transient particle burst shown when the user taps a body part (null = none). */
+  emotionBurst: Emotion | null;
   settings: AppSettings;
 }
 
@@ -48,6 +51,8 @@ interface AppStoreActions {
   setMicActive: (active: boolean) => void;
   setSubtitle: (text: string) => void;
   setLastResponse: (text: string) => void;
+  triggerEmotionBurst: (emotion: Emotion) => void;
+  clearEmotionBurst: () => void;
   updateSettings: (partial: Partial<AppSettings>) => void;
   resetSession: () => void;
 }
@@ -78,6 +83,7 @@ export const useAppStore = create<AppStore>()(
       isMicActive: false,
       subtitle: '',
       lastResponse: '',
+      emotionBurst: null,
       settings: DEFAULT_SETTINGS,
 
       setAIState: (aiState) => {
@@ -140,6 +146,10 @@ export const useAppStore = create<AppStore>()(
       setSubtitle: (subtitle) => set({ subtitle }),
 
       setLastResponse: (lastResponse) => set({ lastResponse }),
+
+      triggerEmotionBurst: (emotion) => set({ emotionBurst: emotion }),
+
+      clearEmotionBurst: () => set({ emotionBurst: null }),
 
       updateSettings: (partial) =>
         set((s) => ({ settings: { ...s.settings, ...partial } })),

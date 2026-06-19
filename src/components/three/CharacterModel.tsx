@@ -1,8 +1,8 @@
 'use client';
 
-import { useEffect, useLayoutEffect, useRef, useMemo } from 'react';
+import { useEffect, useLayoutEffect, useRef, useMemo, useCallback } from 'react';
 import { useGLTF } from '@react-three/drei';
-import { useFrame } from '@react-three/fiber';
+import { useFrame, type ThreeEvent } from '@react-three/fiber';
 import * as THREE from 'three';
 import { clone as cloneWithSkeleton } from 'three/examples/jsm/utils/SkeletonUtils.js';
 import { AnimationController } from '@/lib/animation/AnimationController';
@@ -15,6 +15,12 @@ import { getCharacterConfig } from '@/config/scene3d';
 function fileNameFromUrl(url: string): string {
   return decodeURIComponent(url.split('/').pop() ?? '');
 }
+
+/** Vùng cơ thể nhân vật được chạm vào (phân theo độ cao của điểm click). */
+export type BodyPart = 'head' | 'body' | 'hands';
+
+/** Quãng di chuyển con trỏ (px) tối đa vẫn coi là "chạm" thay vì kéo xoay camera. */
+const CLICK_DRAG_THRESHOLD = 6;
 
 /** Thời lượng hiệu ứng nhân vật "mọc lên" khi mới xuất hiện / đổi nhân vật (giây). */
 const ENTRANCE_DURATION = 0.85;
@@ -42,6 +48,8 @@ interface CharacterModelProps {
   onModelReady?: (group: THREE.Group) => void;
   onGestureEnd?: () => void;
   onError?: (error: string) => void;
+  /** Người dùng chạm vào nhân vật; part được suy ra từ độ cao điểm chạm. */
+  onBodyPartClick?: (part: BodyPart) => void;
   /**
    * Cao độ mặt sàn thật tại (x,z) của nhân vật (raycast từ PetScene). Dùng cho
    * position.y để chân đứng đúng trên mặt cát dù bãi biển không phẳng; chưa đo
@@ -59,6 +67,7 @@ export function CharacterModel({
   onModelReady,
   onGestureEnd,
   onError,
+  onBodyPartClick,
   groundY,
 }: CharacterModelProps) {
   const groupRef = useRef<THREE.Group>(null);
@@ -113,6 +122,57 @@ export function CharacterModel({
     });
     return box.isEmpty() ? 0 : -box.min.y;
   }, [clonedScene]);
+
+  // Hộp bao BIND POSE trong hệ toạ độ riêng của clonedScene — dùng để quy đổi
+  // điểm chạm (world) về độ cao chuẩn hoá 0..1 nhằm phân vùng đầu/mình/tay.
+  const bounds = useMemo(() => {
+    const box = new THREE.Box3();
+    const tmp = new THREE.Box3();
+    clonedScene.updateWorldMatrix(true, true);
+    clonedScene.traverse((child) => {
+      const mesh = child as THREE.Mesh;
+      if (!mesh.isMesh) return;
+      if (!mesh.geometry.boundingBox) mesh.geometry.computeBoundingBox();
+      if (!mesh.geometry.boundingBox) return;
+      tmp.copy(mesh.geometry.boundingBox).applyMatrix4(mesh.matrixWorld);
+      box.union(tmp);
+    });
+    return box;
+  }, [clonedScene]);
+
+  // Vị trí con trỏ lúc nhấn xuống, để phân biệt "chạm" với "kéo xoay" camera.
+  const pointerDownRef = useRef<{ x: number; y: number } | null>(null);
+
+  const handlePointerDown = useCallback((e: ThreeEvent<PointerEvent>) => {
+    pointerDownRef.current = { x: e.clientX, y: e.clientY };
+  }, []);
+
+  const handleClick = useCallback(
+    (e: ThreeEvent<MouseEvent>) => {
+      const down = pointerDownRef.current;
+      pointerDownRef.current = null;
+      // Bỏ qua nếu là thao tác kéo xoay camera (con trỏ di chuyển nhiều).
+      if (down && Math.hypot(e.clientX - down.x, e.clientY - down.y) > CLICK_DRAG_THRESHOLD) {
+        return;
+      }
+      if (!onBodyPartClick || bounds.isEmpty()) return;
+      e.stopPropagation();
+
+      // Đưa điểm chạm về hệ toạ độ clonedScene (trùng hệ của bounds).
+      const local = clonedScene.worldToLocal(e.point.clone());
+      const ny = (local.y - bounds.min.y) / (bounds.max.y - bounds.min.y || 1);
+      const halfW = (bounds.max.x - bounds.min.x) / 2 || 1;
+      const cx = (bounds.max.x + bounds.min.x) / 2;
+      const nx = Math.abs(local.x - cx) / halfW;
+
+      let part: BodyPart;
+      if (ny >= 0.72) part = 'head';
+      else if (nx >= 0.55 && ny >= 0.3) part = 'hands';
+      else part = 'body';
+      onBodyPartClick(part);
+    },
+    [bounds, clonedScene, onBodyPartClick]
+  );
 
   // Khởi động hiệu ứng "mọc lên" mỗi khi ĐỔI sang nhân vật mới (bỏ qua lần mount
   // đầu — xem firstMountRef). useLayoutEffect để đặt scale=0/opacity=0 NGAY sau
@@ -225,7 +285,14 @@ export function CharacterModel({
       rotation={[0, config.rotationY, 0]}
       scale={config.scale}
     >
-      <primitive object={clonedScene} position={[0, footOffset, 0]} />
+      <primitive
+        object={clonedScene}
+        position={[0, footOffset, 0]}
+        onPointerDown={handlePointerDown}
+        onClick={handleClick}
+        onPointerOver={() => (document.body.style.cursor = 'pointer')}
+        onPointerOut={() => (document.body.style.cursor = 'auto')}
+      />
     </group>
   );
 }

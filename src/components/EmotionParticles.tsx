@@ -12,6 +12,7 @@ const PARTICLE_ICONS: Record<string, IconName[]> = {
   zzz: ['moon', 'moon', 'moon'],
   fire: ['flame', 'flame', 'flame'],
   stars: ['star', 'star', 'sparkles', 'star'],
+  exclaim: ['energy', 'star', 'energy'],
   none: [],
 };
 

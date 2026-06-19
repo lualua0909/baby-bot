@@ -25,12 +25,15 @@ import { AppIcon } from '@/components/ui/AppIcon';
 import { cartoonBackground } from '@/styles/cartoon-tokens';
 import { cn } from '@/lib/utils';
 import EmotionBar from '@/components/ui/EmotionBar';
+import EmotionParticles from '@/components/EmotionParticles';
 
 export default function AppShell() {
   const appMode = useAppStore((s) => s.appMode);
   const setAppMode = useAppStore((s) => s.setAppMode);
   const activeGame = useAppStore((s) => s.activeGame);
   const setActiveGame = useAppStore((s) => s.setActiveGame);
+  const emotionBurst = useAppStore((s) => s.emotionBurst);
+  const clearEmotionBurst = useAppStore((s) => s.clearEmotionBurst);
 
   const lipSyncRef = useRef<LipSyncManager | null>(null);
   const { isSpeaking, isListening, toggleListening, startListening, stopListening, speakText, speakChunk } =
@@ -50,6 +53,13 @@ export default function AppShell() {
     if (appMode === 'story') setStoryOpen(true);
     if (appMode === 'game' && !activeGame) setGamePickerOpen(true);
   }, [appMode, activeGame]);
+
+  // Particle khi chạm vào nhân vật chỉ là hiệu ứng thoáng qua → tự tắt sau ~2s.
+  useEffect(() => {
+    if (!emotionBurst) return;
+    const timer = setTimeout(clearEmotionBurst, 2000);
+    return () => clearTimeout(timer);
+  }, [emotionBurst, clearEmotionBurst]);
 
   const prevAppModeRef = useRef(appMode);
 
@@ -115,6 +125,13 @@ export default function AppShell() {
           onSceneReady={handleSceneReady}
         />
       </div>
+
+      {/* Hiệu ứng particle thoáng qua khi chạm vào nhân vật (phủ trên sân khấu). */}
+      {emotionBurst && (
+        <div className="fixed inset-0 z-[5] pointer-events-none">
+          <EmotionParticles emotion={emotionBurst} />
+        </div>
+      )}
 
       <TopBar />
 

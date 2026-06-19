@@ -4,7 +4,7 @@ import { Suspense, useState, useEffect, useMemo } from 'react';
 import { Canvas, useThree } from '@react-three/fiber';
 import { OrbitControls, Environment, ContactShadows, useGLTF } from '@react-three/drei';
 import * as THREE from 'three';
-import { CharacterModel } from './CharacterModel';
+import { CharacterModel, type BodyPart } from './CharacterModel';
 import { LipSyncManager } from '@/lib/lipSync/LipSyncManager';
 import type { AnimationController } from '@/lib/animation/AnimationController';
 import type { CharacterAnimation } from '@/types/animation';
@@ -24,6 +24,7 @@ interface PetSceneProps {
   onControllerReady?: (controller: AnimationController) => void;
   onGestureEnd?: () => void;
   onSceneReady?: () => void;
+  onBodyPartClick?: (part: BodyPart) => void;
 }
 
 function LoadingFallback() {
@@ -204,6 +205,7 @@ function SceneContent({
   onControllerReady,
   onGestureEnd,
   onSceneReady,
+  onBodyPartClick,
 }: PetSceneProps) {
   const [error, setError] = useState<string | null>(null);
   const [model, setModel] = useState<THREE.Group | null>(null);
@@ -270,6 +272,7 @@ function SceneContent({
           }}
           onModelReady={setModel}
           onGestureEnd={onGestureEnd}
+          onBodyPartClick={onBodyPartClick}
           onError={(message) => {
             setError(message);
             onSceneReady?.();
