@@ -8,7 +8,7 @@ import { CharacterModel, type BodyPart } from './CharacterModel';
 import { LipSyncManager } from '@/lib/lipSync/LipSyncManager';
 import type { AnimationController } from '@/lib/animation/AnimationController';
 import type { CharacterAnimation } from '@/types/animation';
-import { FLOOR_CONFIGS, GROUND_Y, getFloorConfig, getCharacterConfig, type FloorConfig } from '@/config/scene3d';
+import { FLOOR_CONFIGS, GROUND_Y, CAMERA_DISTANCE_SCALE, getFloorConfig, getCharacterConfig, type FloorConfig } from '@/config/scene3d';
 
 /** Lấy tên file .glb từ URL phục vụ character (vd /api/character/character-1.glb). */
 function fileNameFromUrl(url: string): string {
@@ -18,6 +18,8 @@ function fileNameFromUrl(url: string): string {
 interface PetSceneProps {
   characterUrl: string;
   floorFile: string;
+  /** Hệ số thu nhỏ nhân vật theo lựa chọn kích cỡ (1 = Large). */
+  characterScale?: number;
   animation: CharacterAnimation;
   isSpeaking: boolean;
   onLipSyncReady?: (lipSync: LipSyncManager) => void;
@@ -138,7 +140,7 @@ function boundingBoxForFraming(target: THREE.Object3D): THREE.Box3 {
  * Frames the camera to the whole character on load and re-fits on resize,
  * so the full body is always visible on any aspect ratio (desktop + mobile).
  */
-function CameraFit({ target }: { target: THREE.Group | null }) {
+function CameraFit({ target, sizeScale = 1 }: { target: THREE.Group | null; sizeScale?: number }) {
   const camera = useThree((s) => s.camera) as THREE.PerspectiveCamera;
   const controls = useThree((s) => s.controls) as
     | (THREE.EventDispatcher & { target: THREE.Vector3; update: () => void })
@@ -156,6 +158,18 @@ function CameraFit({ target }: { target: THREE.Group | null }) {
     const center = new THREE.Vector3();
     box.getSize(size);
     box.getCenter(center);
+
+    // Khung hình luôn ôm trọn nhân vật ở kích cỡ GỐC (Large), bất kể lựa chọn
+    // thu nhỏ: model được scale quanh gốc group (world position), nên chia ngược
+    // sizeScale để khôi phục extents/center như khi Large. Nhờ vậy chọn Vừa/Nhỏ
+    // khiến nhân vật NHỎ ĐI trong khung giữ nguyên, thay vì camera zoom lại bù.
+    if (sizeScale !== 1) {
+      const origin = new THREE.Vector3();
+      target.getWorldPosition(origin);
+      size.divideScalar(sizeScale);
+      center.sub(origin).divideScalar(sizeScale).add(origin);
+    }
+
     const radius = size.length() / 2;
 
     // Leave room under the feet for the contact shadow, generous room above the
@@ -175,7 +189,7 @@ function CameraFit({ target }: { target: THREE.Group | null }) {
     // Fit by padded extents so the whole character + motion range stays visible.
     const distV = fitHeight / 2 / Math.tan(vFov / 2);
     const distH = fitWidth / 2 / Math.tan(hFov / 2);
-    const dist = Math.max(distV, distH) * 1.04;
+    const dist = Math.max(distV, distH) * 1.04 * CAMERA_DISTANCE_SCALE;
 
     // Nhân vật quay mặt về +X (rotationY = 90°), nên đặt camera phía +X để nhìn
     // thẳng mặt; chếch nhẹ lên trên (0.1) cho giống góc tham chiếu.
@@ -191,7 +205,7 @@ function CameraFit({ target }: { target: THREE.Group | null }) {
     } else {
       camera.lookAt(center);
     }
-  }, [target, width, height, camera, controls]);
+  }, [target, width, height, camera, controls, sizeScale]);
 
   return null;
 }
@@ -199,6 +213,7 @@ function CameraFit({ target }: { target: THREE.Group | null }) {
 function SceneContent({
   characterUrl,
   floorFile,
+  characterScale = 1,
   animation,
   isSpeaking,
   onLipSyncReady,
@@ -236,13 +251,18 @@ function SceneContent({
   // cho mọi vị trí (chân sẽ lún/lửng). Tính lại khi đổi sàn hoặc đổi nhân vật.
   useEffect(() => {
     if (!floorObj) return;
+    // Sàn phẳng (vd Shop): không raycast, để nhân vật đứng đúng mốc chân GROUND_Y.
+    if (floor.flat) {
+      setGroundY(undefined);
+      return;
+    }
     const [x, , z] = character.position;
     floorObj.updateWorldMatrix(true, true);
     const ray = new THREE.Raycaster();
     ray.set(new THREE.Vector3(x, 1000, z), new THREE.Vector3(0, -1, 0));
     const hit = ray.intersectObject(floorObj, true)[0];
     setGroundY(hit ? hit.point.y : undefined);
-  }, [floorObj, character]);
+  }, [floorObj, character, floor.flat]);
 
   if (error) {
     return (
@@ -278,6 +298,7 @@ function SceneContent({
             onSceneReady?.();
           }}
           groundY={groundY}
+          sizeScale={characterScale}
         />
       </Suspense>
 
@@ -294,7 +315,7 @@ function SceneContent({
 
       <ContactShadows position={[0, -1, 0]} opacity={0.4} scale={8} blur={2} />
       <Environment preset="apartment" />
-      <CameraFit target={model} />
+      <CameraFit target={model} sizeScale={characterScale} />
       <OrbitControls
         makeDefault
         enablePan={false}

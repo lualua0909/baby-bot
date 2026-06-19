@@ -4,9 +4,7 @@ export type VoiceProviderType =
   | 'web-speech'
   | 'openai-tts'
   | 'openai-realtime'
-  | 'deepgram'
-  | 'elevenlabs'
-  | 'cartesia';
+  | 'elevenlabs';
 
 export interface VoiceConfig {
   sttProvider: VoiceProviderType;

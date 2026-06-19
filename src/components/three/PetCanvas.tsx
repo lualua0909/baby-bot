@@ -8,6 +8,7 @@ import type { AnimationController } from '@/lib/animation/AnimationController';
 import type { CharacterAnimation } from '@/types/animation';
 import type { Emotion } from '@/lib/emotionEngine';
 import type { BodyPart } from './CharacterModel';
+import { getCharacterSizeScale } from '@/config/scene3d';
 
 /**
  * Chạm vào từng vùng cơ thể → một cử chỉ (one-shot, tự về Idle) kèm hiệu ứng
@@ -33,6 +34,7 @@ interface PetCanvasProps {
 export default function PetCanvas({ isSpeaking, lipSyncRef, onSceneReady }: PetCanvasProps) {
   const characterFile = useAppStore((s) => s.settings.characterFile);
   const floorFile = useAppStore((s) => s.settings.floorFile);
+  const characterScale = useAppStore((s) => getCharacterSizeScale(s.settings.characterSize));
   const currentAnimation = useAppStore((s) => s.overrideAnimation ?? s.currentAnimation);
   const restAfterGesture = useAppStore((s) => s.restAfterGesture);
   const setAvailableAnimations = useAppStore((s) => s.setAvailableAnimations);
@@ -69,6 +71,7 @@ export default function PetCanvas({ isSpeaking, lipSyncRef, onSceneReady }: PetC
       <PetScene
         characterUrl={characterUrl}
         floorFile={floorFile}
+        characterScale={characterScale}
         animation={currentAnimation}
         isSpeaking={isSpeaking}
         onLipSyncReady={handleLipSyncReady}

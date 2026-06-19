@@ -14,6 +14,7 @@ export function useVoiceChat(lipSyncRef: React.MutableRefObject<LipSyncManager |
   const setAIState = useAppStore((s) => s.setAIState);
   const setMicActive = useAppStore((s) => s.setMicActive);
   const setSubtitle = useAppStore((s) => s.setSubtitle);
+  const setUserTranscript = useAppStore((s) => s.setUserTranscript);
   const setLastResponse = useAppStore((s) => s.setLastResponse);
   const addLevelProgress = useAppStore((s) => s.addLevelProgress);
 
@@ -42,6 +43,7 @@ export function useVoiceChat(lipSyncRef: React.MutableRefObject<LipSyncManager |
       try {
         const response = await service.fetchLLMResponse(systemPrompt, text);
         setLastResponse(response);
+        setUserTranscript('');
         setSubtitle(response);
         await service.speak(response);
       } catch (err) {
@@ -50,7 +52,7 @@ export function useVoiceChat(lipSyncRef: React.MutableRefObject<LipSyncManager |
         setIsSpeaking(false);
       }
     },
-    [settings.petName, setAIState, setLastResponse, setSubtitle]
+    [settings.petName, setAIState, setLastResponse, setSubtitle, setUserTranscript]
   );
 
   useEffect(() => {
@@ -67,7 +69,7 @@ export function useVoiceChat(lipSyncRef: React.MutableRefObject<LipSyncManager |
         setMicActive(false);
       },
       onTranscript: (result) => {
-        setSubtitle(result.text);
+        setUserTranscript(result.text);
         if (result.isFinal && result.text.trim()) {
           void processTranscript(result.text);
         }
@@ -105,6 +107,7 @@ export function useVoiceChat(lipSyncRef: React.MutableRefObject<LipSyncManager |
     setAIState,
     setMicActive,
     setSubtitle,
+    setUserTranscript,
     addLevelProgress,
     lipSyncRef,
     processTranscript,
@@ -120,8 +123,9 @@ export function useVoiceChat(lipSyncRef: React.MutableRefObject<LipSyncManager |
     if (!service) return;
 
     setSubtitle('');
+    setUserTranscript('');
     await service.startListening();
-  }, [isListening, setSubtitle]);
+  }, [isListening, setSubtitle, setUserTranscript]);
 
   const startListening = useCallback(async () => {
     if (isListeningRef.current) return;
@@ -130,8 +134,9 @@ export function useVoiceChat(lipSyncRef: React.MutableRefObject<LipSyncManager |
     if (!service) return;
 
     setSubtitle('');
+    setUserTranscript('');
     await service.startListening();
-  }, [setSubtitle]);
+  }, [setSubtitle, setUserTranscript]);
 
   const stopListening = useCallback(() => {
     serviceRef.current?.stopListening();

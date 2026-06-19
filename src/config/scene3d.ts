@@ -20,6 +20,14 @@ export const GROUND_Y = -1;
  */
 export const CHARACTER_BACK_OFFSET = -1.5;
 
+/**
+ * Hệ số kéo LÙI camera so với mức fit sát nhân vật (1.0 = ôm sát như cũ). Tăng
+ * lên để camera lùi ra xa hơn → góc nhìn bắt đầu từ mép gần của mặt sàn 3D, thấy
+ * được cả sàn trải ra trước mặt thay vì chỉ thấy mỗi nhân vật. Chỉnh số này cho
+ * tới khi mép sàn lọt đúng cạnh khung hình.
+ */
+export const CAMERA_DISTANCE_SCALE = 2.0;
+
 export interface FloorConfig {
   /** URL tĩnh tới file .glb của sàn. */
   url: string;
@@ -27,6 +35,11 @@ export interface FloorConfig {
   footprint: number;
   /** Xoay sàn quanh trục đứng (radian) để khớp hướng cảnh. */
   rotationY: number;
+  /**
+   * Sàn phẳng: bỏ qua raycast dò cao độ (vốn dễ bắt trúng mái hiên/phần nhô của
+   * cảnh khiến nhân vật đứng lửng) và cho nhân vật đứng thẳng mốc chân GROUND_Y.
+   */
+  flat?: boolean;
 }
 
 /** Thông số RIÊNG của từng mặt sàn. Thêm sàn mới = thêm 1 entry. */
@@ -44,7 +57,8 @@ export const FLOOR_CONFIGS: Record<string, FloorConfig> = {
   'Shop.glb': {
     url: '/Shop.glb',
     footprint: 18,
-    rotationY: 0,
+    rotationY: -Math.PI / 2,
+    flat: true,
   },
 };
 
@@ -127,4 +141,31 @@ export const DEFAULT_CHARACTER: CharacterConfig = CHARACTER_CONFIGS['character-1
 /** Lấy config nhân vật theo tên file, fallback về default nếu chưa khai báo. */
 export function getCharacterConfig(file: string): CharacterConfig {
   return CHARACTER_CONFIGS[file] ?? DEFAULT_CHARACTER;
+}
+
+/** Mức kích cỡ hiển thị của nhân vật. */
+export type CharacterSize = 'large' | 'medium' | 'small';
+
+/**
+ * Hệ số phóng to nhân vật theo lựa chọn kích cỡ. Small = kích thước Large cũ
+ * (1.0); mỗi mức lớn hơn = 1.5× mức liền dưới — Medium = Small × 1.5, Large =
+ * Medium × 1.5 (≈ 2.25× Small). Hệ số này nhân vào config.scale.
+ */
+export const CHARACTER_SIZE_SCALES: Record<CharacterSize, number> = {
+  small: 1,
+  medium: 1.5,
+  large: 2.25,
+};
+
+export const CHARACTER_SIZE_LABELS: Record<CharacterSize, string> = {
+  large: 'Lớn',
+  medium: 'Vừa',
+  small: 'Nhỏ',
+};
+
+export const CHARACTER_SIZE_OPTIONS: CharacterSize[] = ['large', 'medium', 'small'];
+
+/** Lấy hệ số scale theo mức kích cỡ, fallback về Large nếu chưa đặt. */
+export function getCharacterSizeScale(size: CharacterSize | undefined): number {
+  return CHARACTER_SIZE_SCALES[size ?? 'large'] ?? 1;
 }

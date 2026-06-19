@@ -37,6 +37,7 @@ function useTypewriter(text: string, enabled: boolean, speed = 32) {
 export default function AIStateBadge() {
   const aiState = useAppStore((s) => s.aiState);
   const subtitle = useAppStore((s) => s.subtitle);
+  const setSubtitle = useAppStore((s) => s.setSubtitle);
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => setMounted(true), []);
@@ -83,6 +84,14 @@ export default function AIStateBadge() {
                 transition={{ type: 'spring', stiffness: 320, damping: 18 }}
               >
                 <CartoonChatBubble variant="ai" tail="down" className="max-w-full w-full">
+                  <button
+                    type="button"
+                    onClick={() => setSubtitle('')}
+                    aria-label="Đóng"
+                    className="pointer-events-auto absolute -top-2 -right-2 flex h-7 w-7 items-center justify-center rounded-full border-2 border-orange-500 bg-white text-orange-500 shadow-md transition-transform hover:scale-110 active:scale-95"
+                  >
+                    <AppIcon name="close" className="h-4 w-4" />
+                  </button>
                   <CartoonRow className="pointer-events-none">
                     <motion.span
                       className="leading-none shrink-0"

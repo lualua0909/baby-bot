@@ -1,14 +1,12 @@
 import type { VoiceProvider, VoiceProviderType, VoiceCallbacks, TTSResult } from '@/types/voice';
-import { friendlyNetworkError } from '@/lib/utils';
+import { friendlyNetworkError, sanitizeLLMText } from '@/lib/utils';
 import { WebSpeechSTTProvider } from './providers/WebSpeechSTTProvider';
 import { OpenAIRealtimeSTTProvider } from './providers/OpenAIRealtimeSTTProvider';
 import { ElevenLabsSTTProvider } from './providers/ElevenLabsSTTProvider';
 import { OpenAITTSProvider } from './providers/OpenAITTSProvider';
 import { OpenAIRealtimeProvider } from './providers/OpenAIRealtimeProvider';
-import { DeepgramProvider } from './providers/DeepgramProvider';
 import { ElevenLabsProvider } from './providers/ElevenLabsProvider';
 import { WebSpeechTTSProvider } from './providers/WebSpeechTTSProvider';
-import { CartesiaProvider } from './providers/CartesiaProvider';
 import { aiStateMachine } from '@/lib/ai/stateMachine';
 
 export function createTTSProvider(type: VoiceProviderType): VoiceProvider {
@@ -19,12 +17,8 @@ export function createTTSProvider(type: VoiceProviderType): VoiceProvider {
       return new OpenAITTSProvider();
     case 'openai-realtime':
       return new OpenAIRealtimeProvider();
-    case 'deepgram':
-      return new DeepgramProvider();
     case 'elevenlabs':
       return new ElevenLabsProvider();
-    case 'cartesia':
-      return new CartesiaProvider();
     default:
       return new OpenAITTSProvider();
   }
@@ -38,8 +32,6 @@ export function createSTTProvider(type: VoiceProviderType): VoiceProvider {
       return new OpenAIRealtimeSTTProvider();
     case 'elevenlabs':
       return new ElevenLabsSTTProvider();
-    case 'deepgram':
-      return new DeepgramProvider();
     default:
       return new WebSpeechSTTProvider();
   }
@@ -230,7 +222,7 @@ export class VoiceService {
       throw new Error(friendlyNetworkError(err));
     }
 
-    return fullText.trim();
+    return sanitizeLLMText(fullText);
   }
 
   destroy(): void {

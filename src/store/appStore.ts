@@ -5,12 +5,15 @@ import type { CharacterAnimation } from '@/types/animation';
 import type { Emotion } from '@/lib/emotionEngine';
 import { ALL_ANIMATIONS } from '@/types/animation';
 import { AI_STATE_ANIMATION_MAP } from '@/lib/animation/animationMap';
+import type { CharacterSize } from '@/config/scene3d';
 
 export interface AppSettings {
   characterFile: string;
   floorFile: string;
   petName: string;
   soundEnabled: boolean;
+  /** Kích cỡ hiển thị của nhân vật (Large = mặc định, giữ nguyên). */
+  characterSize: CharacterSize;
 }
 
 interface AppStoreState {
@@ -28,6 +31,8 @@ interface AppStoreState {
   isSettingsOpen: boolean;
   isMicActive: boolean;
   subtitle: string;
+  /** Văn bản người dùng vừa nói qua mic (interim + final), hiển thị cạnh nút mic. */
+  userTranscript: string;
   lastResponse: string;
   /** Transient particle burst shown when the user taps a body part (null = none). */
   emotionBurst: Emotion | null;
@@ -50,6 +55,7 @@ interface AppStoreActions {
   setSettingsOpen: (open: boolean) => void;
   setMicActive: (active: boolean) => void;
   setSubtitle: (text: string) => void;
+  setUserTranscript: (text: string) => void;
   setLastResponse: (text: string) => void;
   triggerEmotionBurst: (emotion: Emotion) => void;
   clearEmotionBurst: () => void;
@@ -64,6 +70,7 @@ const DEFAULT_SETTINGS: AppSettings = {
   floorFile: 'Beach.glb',
   petName: 'Bé Tom',
   soundEnabled: true,
+  characterSize: 'large',
 };
 
 export const useAppStore = create<AppStore>()(
@@ -82,6 +89,7 @@ export const useAppStore = create<AppStore>()(
       isSettingsOpen: false,
       isMicActive: false,
       subtitle: '',
+      userTranscript: '',
       lastResponse: '',
       emotionBurst: null,
       settings: DEFAULT_SETTINGS,
@@ -145,6 +153,8 @@ export const useAppStore = create<AppStore>()(
 
       setSubtitle: (subtitle) => set({ subtitle }),
 
+      setUserTranscript: (userTranscript) => set({ userTranscript }),
+
       setLastResponse: (lastResponse) => set({ lastResponse }),
 
       triggerEmotionBurst: (emotion) => set({ emotionBurst: emotion }),
@@ -161,6 +171,7 @@ export const useAppStore = create<AppStore>()(
           overrideAnimation: null,
           isMicActive: false,
           subtitle: '',
+          userTranscript: '',
           activeStoryTheme: null,
           activeGame: null,
         }),

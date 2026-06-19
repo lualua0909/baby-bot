@@ -6,6 +6,7 @@ import { PetState } from '@/lib/petState';
 import { detectEmotionFromMessage } from '@/lib/emotionDetector';
 import { TypingDots } from '@/components/ui/TypingDots';
 import { Button } from '@/components/ui/Button';
+import { sanitizeLLMText } from '@/lib/utils';
 
 interface Message {
   role: 'user' | 'pet';
@@ -96,8 +97,8 @@ export default function ChatInterface({
           const chunk = decoder.decode(value, { stream: true });
           fullResponse += chunk;
 
-          // Don't display JSON stat block
-          const displayText = fullResponse.replace(/\n?\{[^}]*"(happiness|emotion)"[^}]*\}\s*$/s, '').trim();
+          // Strip JSON stat block + leaked safety/meta lines before display
+          const displayText = sanitizeLLMText(fullResponse);
 
           setMessages((prev) => {
             const updated = [...prev];

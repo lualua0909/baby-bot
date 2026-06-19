@@ -19,7 +19,13 @@ import { getElevenLabsViVoice } from '@/lib/voice/elevenlabsViVoices';
 import { cartoonTypography } from '@/styles/cartoon-tokens';
 import { cn } from '@/lib/utils';
 
-import { FLOOR_LABELS, FLOOR_OPTIONS, FLOOR_ICONS } from '@/config/scene3d';
+import {
+  FLOOR_LABELS,
+  FLOOR_OPTIONS,
+  FLOOR_ICONS,
+  CHARACTER_SIZE_OPTIONS,
+  CHARACTER_SIZE_LABELS,
+} from '@/config/scene3d';
 import { AppIcon } from '@/components/ui/AppIcon';
 
 const CHARACTER_OPTIONS = ['character-1.glb', 'character-2.glb', 'character-3.glb'];
@@ -75,6 +81,27 @@ export default function SettingsModal() {
               {CHARACTER_OPTIONS.map((c) => (
                 <SelectItem key={c} value={c}>
                   {c}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div className="flex flex-col gap-6">
+          <Label htmlFor="character-size">Kích cỡ nhân vật</Label>
+          <Select
+            value={settings.characterSize ?? 'large'}
+            onValueChange={(value) =>
+              updateSettings({ characterSize: value as (typeof CHARACTER_SIZE_OPTIONS)[number] })
+            }
+          >
+            <SelectTrigger id="character-size">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {CHARACTER_SIZE_OPTIONS.map((s) => (
+                <SelectItem key={s} value={s}>
+                  {CHARACTER_SIZE_LABELS[s]}
                 </SelectItem>
               ))}
             </SelectContent>

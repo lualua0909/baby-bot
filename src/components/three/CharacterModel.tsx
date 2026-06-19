@@ -56,6 +56,8 @@ interface CharacterModelProps {
    * được thì rơi về config.position[1] (GROUND_Y).
    */
   groundY?: number;
+  /** Hệ số thu nhỏ theo lựa chọn kích cỡ (1 = Large). Nhân vào config.scale. */
+  sizeScale?: number;
 }
 
 export function CharacterModel({
@@ -69,6 +71,7 @@ export function CharacterModel({
   onError,
   onBodyPartClick,
   groundY,
+  sizeScale = 1,
 }: CharacterModelProps) {
   const groupRef = useRef<THREE.Group>(null);
   const controllerRef = useRef<AnimationController | null>(null);
@@ -85,6 +88,9 @@ export function CharacterModel({
 
   const { scene, animations } = useGLTF(url, true);
   const config = useMemo(() => getCharacterConfig(fileNameFromUrl(url)), [url]);
+  // Scale đích sau khi áp lựa chọn kích cỡ; CameraFit ở PetScene chia ngược lại
+  // hệ số này nên khung hình giữ nguyên → chọn Vừa/Nhỏ làm nhân vật nhỏ đi thật.
+  const targetScale = config.scale * sizeScale;
 
   const clonedScene = useMemo(() => {
     // SkeletonUtils.clone clone đúng cả skeleton → skinned mesh (bàn tay) bám
@@ -250,7 +256,7 @@ export function CharacterModel({
 
       // Scale bật vượt nhẹ; gốc group đặt ở chân (GROUND_Y) nên nhân vật mọc
       // thẳng lên từ mặt đất thay vì phình ra giữa không trung.
-      groupRef.current.scale.setScalar(config.scale * easeOutBack(t));
+      groupRef.current.scale.setScalar(targetScale * easeOutBack(t));
       // Xoay vào đúng hướng đứng cuối cùng.
       const spin = easeOutCubic(t);
       groupRef.current.rotation.y = config.rotationY - ENTRANCE_SPIN * (1 - spin);
@@ -260,7 +266,7 @@ export function CharacterModel({
 
       if (t >= 1) {
         entrance.active = false;
-        groupRef.current.scale.setScalar(config.scale);
+        groupRef.current.scale.setScalar(targetScale);
         groupRef.current.rotation.y = config.rotationY;
         fadeMatsRef.current.forEach(({ mat, transparent }) => {
           mat.opacity = 1;
@@ -283,7 +289,7 @@ export function CharacterModel({
       ref={groupRef}
       position={[config.position[0], groundY ?? config.position[1], config.position[2]]}
       rotation={[0, config.rotationY, 0]}
-      scale={config.scale}
+      scale={targetScale}
     >
       <primitive
         object={clonedScene}

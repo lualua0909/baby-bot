@@ -1,8 +1,10 @@
 'use client';
 
+import { useState } from 'react';
 import { useAppStore } from '@/store/appStore';
 import type { CharacterAnimation } from '@/types/animation';
 import { Button } from '@/components/ui/Button';
+import { AppIcon } from '@/components/ui/AppIcon';
 import { cn } from '@/lib/utils';
 
 /** Nhãn + câu nói tiếng Việt cho từng animation clip có trong GLB. */
@@ -49,9 +51,21 @@ export default function EmotionBar({ speakText }: EmotionBarProps) {
   const overrideAnimation = useAppStore((s) => s.overrideAnimation);
   const currentAnimation = useAppStore((s) => s.currentAnimation);
   const active = overrideAnimation ?? currentAnimation;
+  const [collapsed, setCollapsed] = useState(false);
 
   return (
-    <div className="pointer-events-auto fixed top-1/2 left-2 z-30 flex max-h-[min(80vh,calc(100dvh-10rem))] -translate-y-1/2 flex-col gap-1 overflow-y-auto p-2 [scrollbar-width:none] sm:left-3 md:left-5 [&::-webkit-scrollbar]:hidden">
+    <div className="pointer-events-none fixed top-1/2 left-2 z-30 flex -translate-y-1/2 items-start gap-1 sm:left-3 md:left-5">
+      <button
+        type="button"
+        onClick={() => setCollapsed((c) => !c)}
+        aria-label={collapsed ? 'Mở thanh cảm xúc' : 'Thu gọn thanh cảm xúc'}
+        aria-expanded={!collapsed}
+        className="pointer-events-auto flex h-9 w-9 shrink-0 items-center justify-center rounded-full border-2 border-orange-500 bg-white text-orange-500 shadow-md transition-transform hover:scale-110 active:scale-95"
+      >
+        <AppIcon name={collapsed ? 'chevron-right' : 'chevron-left'} className="h-5 w-5" />
+      </button>
+      {!collapsed && (
+        <div className="pointer-events-auto flex max-h-[min(80vh,calc(100dvh-10rem))] flex-col gap-1 overflow-y-auto p-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
       {availableAnimations.map((name) => {
           const m = metaFor(name);
           return (
@@ -74,6 +88,8 @@ export default function EmotionBar({ speakText }: EmotionBarProps) {
             </div>
           );
       })}
+        </div>
+      )}
     </div>
   );
 }

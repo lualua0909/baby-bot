@@ -13,6 +13,29 @@ export function shadeHex(hex: string, amount: number): string {
   return `#${((r << 16) | (g << 8) | b).toString(16).padStart(6, '0')}`;
 }
 
+/**
+ * Strip LLM meta artifacts that some models (e.g. OpenRouter free models) leak
+ * into their text output: safety/moderation classification lines like
+ * "User Safety: safe" and the trailing JSON stat block.
+ */
+export function sanitizeLLMText(text: string): string {
+  return text
+    // safety/moderation classification lines, with optional markdown/bracket
+    // wrappers and surrounding parens, anywhere in the text. Examples:
+    //   "User Safety: safe"        "**Safety:** safe"
+    //   "Safety rating: low"       "(Content Safety: safe)"
+    //   "[Moderation] flagged"     "- Classification: benign"
+    .replace(
+      /^[\s>*_\-#[\](]*(user[\s_-]+)?(content[\s_-]+)?(safety([\s_-]+(rating|level|status|score|check))?|moderation|classification)[\s*_\]]*[:=][^\n]*$/gim,
+      ''
+    )
+    // trailing JSON stat block
+    .replace(/\n?\{[^}]*"(happiness|emotion)"[^}]*\}\s*$/s, '')
+    // collapse blank lines left behind by removed lines
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
+}
+
 const NETWORK_ERROR_RE = /failed to fetch|networkerror|network request failed|load failed/i;
 
 /** Turn browser fetch/network errors into a kid-friendly Vietnamese message. */
