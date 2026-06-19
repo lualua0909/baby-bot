@@ -6,6 +6,7 @@ import { createPortal } from 'react-dom';
 import { useAppStore } from '@/store/appStore';
 import { CartoonChatBubble, CartoonRow } from '@/components/cartoon';
 import { AppIcon } from '@/components/ui/AppIcon';
+import { TypingDots } from '@/components/ui/TypingDots';
 import { cartoonTypography } from '@/styles/cartoon-tokens';
 import { cn } from '@/lib/utils';
 
@@ -47,9 +48,6 @@ export default function AIStateBadge() {
   const typed = useTypewriter(fullText, hasSpeech);
   const isTyping = hasSpeech && typed.length < fullText.length;
 
-  // Bubble chat chỉ hiển thị khi character đang nói; khi đợi response thì ẩn (nội dung đã clear).
-  const visible = hasSpeech;
-
   if (!mounted) return null;
 
   return createPortal(
@@ -61,7 +59,22 @@ export default function AIStateBadge() {
       <div className="pointer-events-none absolute top-6 left-1/2 w-[min(88vw,26rem)] -translate-x-1/2 md:top-8">
         <motion.div className="animate-bubble-bob pointer-events-auto flex justify-center">
           <AnimatePresence mode="wait">
-            {visible && (
+            {isThinking && (
+              <motion.div
+                key="thinking"
+                initial={{ opacity: 0, y: -12, scale: 0.6 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.6 }}
+                transition={{ type: 'spring', stiffness: 320, damping: 18 }}
+              >
+                <CartoonChatBubble variant="ai" tail="down" className="max-w-full w-full">
+                  <div className="flex justify-center">
+                    <TypingDots />
+                  </div>
+                </CartoonChatBubble>
+              </motion.div>
+            )}
+            {hasSpeech && (
               <motion.div
                 key="speech"
                 initial={{ opacity: 0, y: -12, scale: 0.6 }}

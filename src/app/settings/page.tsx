@@ -176,7 +176,7 @@ export default function SettingsPage() {
                 TTS Provider
               </h2>
               <p className={cn(cartoonTypography.body, cartoonInk, 'opacity-70')}>
-                Text-to-Speech — giọng nói bạn thú trả lời
+                Text-to-Speech — giọng nói AI BOT trả lời
               </p>
               <CartoonStack align="stretch">
                 {TTS_PROVIDER_OPTIONS.map((option) => (
@@ -197,7 +197,7 @@ export default function SettingsPage() {
                     Giọng nhân vật ElevenLabs
                   </h2>
                   <p className={cn(cartoonTypography.body, cartoonInk, 'opacity-70')}>
-                    Chọn giọng tiếng Việt cho bạn thú — 5 giọng nữ và 5 giọng nam
+                    Chọn giọng tiếng Việt cho AI BOT — 5 giọng nữ và 5 giọng nam
                   </p>
 
                   <h3 className={cn(cartoonTypography.body, cartoonInk, 'font-semibold mt-4 inline-flex items-center gap-2')}>

@@ -53,7 +53,7 @@ export default function SettingsModal() {
     >
       <CartoonStack align="stretch">
         <div className="flex flex-col gap-6">
-          <Label htmlFor="pet-name">Tên bạn thú</Label>
+          <Label htmlFor="pet-name">Tên AI BOT</Label>
           <Input
             id="pet-name"
             type="text"

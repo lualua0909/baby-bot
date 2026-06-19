@@ -49,7 +49,7 @@ export const ELEVENLABS_VI_MALE_VOICES: ElevenLabsViVoice[] = [
     id: 'IovBBFnLZ6QzJhFLLroy',
     name: 'Tam Nguyễn',
     gender: 'male',
-    description: 'Giọng kể cổ tích, sách thiếu nhi — lựa chọn tốt cho bạn thú.',
+    description: 'Giọng kể cổ tích, sách thiếu nhi — lựa chọn tốt cho AI BOT.',
     kidFriendly: true,
   },
   {

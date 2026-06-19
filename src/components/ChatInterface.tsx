@@ -4,6 +4,7 @@ import { useState, useRef, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { PetState } from '@/lib/petState';
 import { detectEmotionFromMessage } from '@/lib/emotionDetector';
+import { TypingDots } from '@/components/ui/TypingDots';
 
 interface Message {
   role: 'user' | 'pet';
@@ -35,7 +36,7 @@ export default function ChatInterface({
     if (scrollRef.current) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
-  }, [messages]);
+  }, [messages, isTyping]);
 
   const sendMessage = useCallback(
     async (text: string, context?: string) => {
@@ -176,8 +177,8 @@ export default function ChatInterface({
             animate={{ opacity: 1 }}
             className="flex justify-start"
           >
-            <div className="glass px-4 py-2 rounded-2xl rounded-bl-sm">
-              <span className="text-white/40 text-sm typing-cursor">đang nghĩ</span>
+            <div className="glass px-4 py-2.5 rounded-2xl rounded-bl-sm">
+              <TypingDots className="[&_span]:bg-white/50" />
             </div>
           </motion.div>
         )}

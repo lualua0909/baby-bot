@@ -22,7 +22,7 @@ const nunito = Nunito({
 
 export const metadata: Metadata = {
   title: 'Bé Tom — AI Pet cho trẻ em',
-  description: 'Bạn thú 3D thông minh — trò chuyện, kể chuyện, học tiếng Anh và chơi game!',
+  description: 'AI BOT 3D thông minh — trò chuyện, kể chuyện, học tiếng Anh và chơi game!',
 };
 
 export default function RootLayout({

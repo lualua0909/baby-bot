@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { openai } from '@/lib/openai';
+import { getOpenAI } from '@/lib/openai';
 import { OPENAI_TTS_MODEL, OPENAI_TTS_VOICE, KID_TTS_SPEED } from '@/types/admin';
 
 export async function POST(req: NextRequest) {
@@ -10,7 +10,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Text is required' }, { status: 400 });
     }
 
-    const response = await openai.audio.speech.create({
+    const response = await getOpenAI().audio.speech.create({
       model: OPENAI_TTS_MODEL,
       voice: OPENAI_TTS_VOICE,
       input: text.slice(0, 4096),

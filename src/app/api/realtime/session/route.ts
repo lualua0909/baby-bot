@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { openai } from '@/lib/openai';
+import { getOpenAI } from '@/lib/openai';
 import { readAdminConfig } from '@/lib/admin/config';
 import { REALTIME_MODEL_CHEAP, TRANSCRIPTION_MODEL_CHEAP } from '@/types/admin';
 
@@ -18,7 +18,7 @@ export async function POST() {
       );
     }
 
-    const session = await openai.beta.realtime.sessions.create({
+    const session = await getOpenAI().beta.realtime.sessions.create({
       model: REALTIME_MODEL_CHEAP,
       modalities: ['text'],
       input_audio_transcription: {

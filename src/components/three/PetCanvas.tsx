@@ -12,7 +12,7 @@ const PetScene = dynamic(() => import('./PetScene'), {
   loading: () => (
     <div className="w-full h-full flex flex-col items-center justify-center gap-3">
       <AppIcon name="paw" className="h-12 w-12 animate-bounce text-white" />
-      <div className="text-lg font-extrabold text-white drop-shadow-[0_2px_3px_rgba(0,0,0,0.4)] animate-pulse">Đang tải bạn thú...</div>
+      <div className="text-lg font-extrabold text-white drop-shadow-[0_2px_3px_rgba(0,0,0,0.4)] animate-pulse">Đang tải AI BOT...</div>
     </div>
   ),
 });

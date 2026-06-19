@@ -1,8 +1,8 @@
 {
   "sttProvider": "web-speech",
-  "ttsProvider": "elevenlabs",
+  "ttsProvider": "web-speech",
   "elevenlabsVoiceId": "P37gHF6iLTEvs2pLYhyv",
   "realtimeModel": "gpt-4o-mini-realtime-preview",
   "transcriptionModel": "whisper-1",
-  "updatedAt": "2026-06-19T00:00:00.000Z"
+  "updatedAt": "2026-06-19T02:59:23.053Z"
 }
