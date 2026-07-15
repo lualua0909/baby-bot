@@ -47,6 +47,8 @@ export class VoiceService {
   private callbacks: VoiceCallbacks = {};
   private audio: HTMLAudioElement | null = null;
   private audioContext: AudioContext | null = null;
+  private speechRequestId = 0;
+  private cancelPlayback: (() => void) | null = null;
   private onAudioConnect?: (audio: HTMLAudioElement, context: AudioContext) => void;
 
   constructor(sttType: VoiceProviderType, ttsType: VoiceProviderType) {
@@ -98,8 +100,18 @@ export class VoiceService {
     this.callbacks.onListeningEnd?.();
   }
 
-  async speak(text: string): Promise<void> {
+  startSpeechRequest(): number {
     this.stopCurrentAudio();
+    this.speechRequestId += 1;
+    return this.speechRequestId;
+  }
+
+  isSpeechRequestActive(requestId: number): boolean {
+    return requestId === this.speechRequestId;
+  }
+
+  async speak(text: string, requestId = this.startSpeechRequest()): Promise<void> {
+    if (!this.isSpeechRequestActive(requestId)) return;
 
     aiStateMachine.transition('SPEAKING', 'tts_start');
     this.callbacks.onStateChange?.('SPEAKING');
@@ -109,19 +121,24 @@ export class VoiceService {
       if (this.ttsProvider.name === 'web-speech') {
         const browserTts = this.ttsProvider as WebSpeechTTSProvider;
         await browserTts.speak(text);
-        this.finishSpeaking('tts_end');
+        if (this.isSpeechRequestActive(requestId)) this.finishSpeaking('tts_end');
         return;
       }
 
       const result: TTSResult = await this.ttsProvider.synthesize(text);
-      await this.playAudio(result.audioUrl);
+      if (!this.isSpeechRequestActive(requestId)) {
+        URL.revokeObjectURL(result.audioUrl);
+        return;
+      }
+      await this.playAudio(result.audioUrl, requestId);
     } catch (apiError) {
+      if (!this.isSpeechRequestActive(requestId)) return;
       console.warn('API TTS failed, falling back to browser speech:', apiError);
       try {
         await new WebSpeechTTSProvider().speak(text);
-        this.finishSpeaking('tts_end');
+        if (this.isSpeechRequestActive(requestId)) this.finishSpeaking('tts_end');
       } catch (fallbackError) {
-        this.finishSpeaking('error');
+        if (this.isSpeechRequestActive(requestId)) this.finishSpeaking('error');
         throw fallbackError;
       }
     }
@@ -144,12 +161,30 @@ export class VoiceService {
     this.callbacks.onSpeakingEnd?.();
   }
 
-  private async playAudio(url: string): Promise<void> {
+  private async playAudio(url: string, requestId: number): Promise<void> {
     const audioContext = await this.ensureAudioContext();
 
     return new Promise((resolve, reject) => {
       const audio = new Audio(url);
+      let settled = false;
+      const finish = (reason: 'tts_end' | 'error', error?: Error) => {
+        if (settled) return;
+        settled = true;
+        URL.revokeObjectURL(url);
+        if (this.audio === audio) this.audio = null;
+        if (this.cancelPlayback) this.cancelPlayback = null;
+        if (this.isSpeechRequestActive(requestId)) this.finishSpeaking(reason);
+        if (error) reject(error);
+        else resolve();
+      };
+
       this.audio = audio;
+      this.cancelPlayback = () => {
+        audio.pause();
+        audio.removeAttribute('src');
+        audio.load();
+        finish('tts_end');
+      };
 
       if (this.onAudioConnect) {
         this.onAudioConnect(audio, audioContext);
@@ -159,25 +194,21 @@ export class VoiceService {
       }
 
       audio.onended = () => {
-        URL.revokeObjectURL(url);
-        this.finishSpeaking('tts_end');
-        resolve();
+        finish('tts_end');
       };
 
       audio.onerror = () => {
-        URL.revokeObjectURL(url);
-        reject(new Error('Audio playback failed'));
+        finish('error', new Error('Audio playback failed'));
       };
 
-      audio.play().catch(reject);
+      audio.play().catch((error: unknown) => {
+        finish('error', error instanceof Error ? error : new Error('Audio playback failed'));
+      });
     });
   }
 
   stopCurrentAudio(): void {
-    if (this.audio) {
-      this.audio.pause();
-      this.audio = null;
-    }
+    this.cancelPlayback?.();
     if (typeof window !== 'undefined') {
       window.speechSynthesis?.cancel();
     }

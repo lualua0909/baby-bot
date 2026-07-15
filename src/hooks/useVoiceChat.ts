@@ -35,6 +35,7 @@ export function useVoiceChat(lipSyncRef: React.MutableRefObject<LipSyncManager |
     async (text: string) => {
       const service = serviceRef.current;
       if (!service || !text.trim()) return;
+      const requestId = service.startSpeechRequest();
 
       setSubtitle('');
       setAIState('THINKING');
@@ -42,11 +43,13 @@ export function useVoiceChat(lipSyncRef: React.MutableRefObject<LipSyncManager |
 
       try {
         const response = await service.fetchLLMResponse(systemPrompt, text);
+        if (!service.isSpeechRequestActive(requestId)) return;
         setLastResponse(response);
         setUserTranscript('');
         setSubtitle(response);
-        await service.speak(response);
+        await service.speak(response, requestId);
       } catch (err) {
+        if (!service.isSpeechRequestActive(requestId)) return;
         setSubtitle(`Lỗi: ${friendlyNetworkError(err, 'Không thể phát giọng nói')}`);
         setAIState('IDLE');
         setIsSpeaking(false);
@@ -149,6 +152,7 @@ export function useVoiceChat(lipSyncRef: React.MutableRefObject<LipSyncManager |
         setSubtitle('Đang khởi tạo giọng nói... Vui lòng thử lại sau vài giây.');
         return;
       }
+      const requestId = service.startSpeechRequest();
 
       setSubtitle('');
       setAIState('THINKING');
@@ -156,10 +160,12 @@ export function useVoiceChat(lipSyncRef: React.MutableRefObject<LipSyncManager |
         const response = systemPrompt
           ? await service.fetchLLMResponse(systemPrompt, text)
           : text;
+        if (!service.isSpeechRequestActive(requestId)) return;
         setLastResponse(response);
         setSubtitle(response);
-        await service.speak(response);
+        await service.speak(response, requestId);
       } catch (err) {
+        if (!service.isSpeechRequestActive(requestId)) return;
         setSubtitle(`Lỗi: ${friendlyNetworkError(err, 'Không thể phát giọng nói')}`);
         setAIState('IDLE');
         setIsSpeaking(false);
@@ -172,8 +178,9 @@ export function useVoiceChat(lipSyncRef: React.MutableRefObject<LipSyncManager |
     async (text: string) => {
       const service = serviceRef.current;
       if (!service) return;
+      const requestId = service.startSpeechRequest();
       setSubtitle(text);
-      await service.speak(text);
+      await service.speak(text, requestId);
     },
     [setSubtitle]
   );

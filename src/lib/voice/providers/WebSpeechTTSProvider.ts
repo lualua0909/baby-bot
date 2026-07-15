@@ -8,9 +8,14 @@ function waitForSpeechVoices(): Promise<SpeechSynthesisVoice[]> {
       resolve(voices);
       return;
     }
-    window.speechSynthesis.onvoiceschanged = () => {
+
+    const finish = () => {
+      window.speechSynthesis.removeEventListener('voiceschanged', finish);
       resolve(window.speechSynthesis.getVoices());
     };
+
+    window.speechSynthesis.addEventListener('voiceschanged', finish, { once: true });
+    window.setTimeout(finish, 1_000);
   });
 }
 
@@ -29,6 +34,7 @@ export class WebSpeechTTSProvider implements VoiceProvider {
 
     window.speechSynthesis.cancel();
     const voices = await waitForSpeechVoices();
+    window.speechSynthesis.resume();
     const voice =
       voices.find((v) => v.lang.toLowerCase().startsWith('vi')) ??
       voices.find((v) => v.lang.toLowerCase().includes('vi')) ??

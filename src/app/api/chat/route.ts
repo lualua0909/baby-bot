@@ -3,7 +3,36 @@ import { createLLMClient, getLLMModel } from '@/lib/llm/client';
 import { getLLMConfig } from '@/lib/llm/config';
 import { buildSystemPrompt } from '@/lib/petPersonality';
 
+const DEFAULT_CHAT_COOLDOWN_MS = 10_000;
+const configuredCooldownMs = Number(process.env.CHAT_COOLDOWN_MS);
+const CHAT_COOLDOWN_MS =
+  Number.isFinite(configuredCooldownMs) && configuredCooldownMs > 0
+    ? configuredCooldownMs
+    : DEFAULT_CHAT_COOLDOWN_MS;
+const recentChatRequests = new Map<string, number>();
+
+function getClientKey(req: NextRequest): string {
+  return req.headers.get('x-forwarded-for')?.split(',')[0].trim() ?? 'anonymous';
+}
+
 export async function POST(req: NextRequest) {
+  const clientKey = getClientKey(req);
+  const now = Date.now();
+  const lastRequestAt = recentChatRequests.get(clientKey) ?? 0;
+  const retryAfterMs = CHAT_COOLDOWN_MS - (now - lastRequestAt);
+
+  if (retryAfterMs > 0) {
+    return new Response(JSON.stringify({ error: 'Vui lòng chờ một chút trước khi nói tiếp.' }), {
+      status: 429,
+      headers: {
+        'Content-Type': 'application/json',
+        'Retry-After': String(Math.ceil(retryAfterMs / 1_000)),
+      },
+    });
+  }
+
+  recentChatRequests.set(clientKey, now);
+
   try {
     const body = await req.json();
     const { message, petState, context, systemPrompt: customSystemPrompt } = body;
